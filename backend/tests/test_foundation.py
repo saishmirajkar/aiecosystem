@@ -7,7 +7,7 @@ from tests.conftest import ADMIN_EMAIL, PASSWORD, login, role_id
 
 
 def test_setup_runs_once(client: TestClient, installed: dict) -> None:
-    assert client.get("/api/v1/setup/status").json() == {"initialized": True}
+    assert client.get("/api/v1/setup/status").json() == {"initialized": True, "demo_data": False}
     r = client.post("/api/v1/setup/initialize", json={
         "company": {"name": "X"}, "admin": {"full_name": "Y", "email": "y@demo.example.com", "password": PASSWORD}})
     assert r.status_code == 409
@@ -189,3 +189,22 @@ def test_upload_validation(client: TestClient, admin_headers: dict) -> None:
 def test_health(client: TestClient) -> None:
     body = client.get("/api/v1/health").json()
     assert body["database"] == "ok" and body["ai_engine"] == "offline"
+
+
+def test_demo_data_loads_consistently(client: TestClient) -> None:
+    r = client.post("/api/v1/setup/initialize", json={
+        "company": {"name": "Demo Precision Components"}, "load_demo_data": True,
+        "admin": {"full_name": "Demo Admin", "email": ADMIN_EMAIL, "password": PASSWORD}})
+    assert r.status_code == 201, r.text
+    assert client.get("/api/v1/setup/status").json()["demo_data"] is True
+    h = login(client, ADMIN_EMAIL)
+    ov = client.get("/api/v1/inventory/overview", headers=h).json()
+    m = ov["metrics"]
+    assert m["active_products"] == 25 and m["warehouse_count"] == 3 and m["pos_awaiting_delivery"] >= 3
+    assert m["low_stock_items"] >= 1 and m["pending_goods_receipts"] == 1
+    assert sum(1 for d in ov["trend"] if d["movements"]) >= 25
+    val = client.get("/api/v1/reports/inventory_valuation", headers=h).json()
+    from decimal import Decimal
+    total_report = sum(Decimal(r["value"]) for r in val["rows"])
+    assert total_report == Decimal(m["total_stock_value"])
+    login(client, "staff@demo.example.com", "Demo-Passw0rd!")

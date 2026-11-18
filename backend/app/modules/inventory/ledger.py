@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import select
@@ -63,6 +63,7 @@ class Posting:
     approval_status: str = "not_required"
     approved_by: uuid.UUID | None = None
     extra_audit: dict = field(default_factory=dict)
+    effective_at: datetime | None = None  # internal use only (demo/back-dated migration loads); never exposed via API
 
 
 def q4(v: Decimal) -> Decimal:
@@ -190,7 +191,7 @@ def post(db: Session, actor: Actor, posting: Posting) -> InventoryTransaction:
 
     allow_negative = bool(get_setting(db, "inventory.allow_negative_stock")) and actor.has("inventory.negative_stock")
     threshold = Decimal(str(get_setting(db, "inventory.high_value_threshold")))
-    now = utcnow()
+    now = posting.effective_at or utcnow()
 
     tx = InventoryTransaction(
         id=uuid.uuid4(), transaction_number=next_number(db, "inventory_transaction"),

@@ -30,7 +30,9 @@ ALERT_TYPES = ["low_stock", "critical_stock", "overstock", "expiring_stock", "pe
 # ------------------------------------------------------------------ setup
 @router.get("/setup/status", tags=["setup"])
 def setup_status(db: DB) -> dict:
-    return {"initialized": svc.is_initialized(db)}
+    from app.models import SystemSetting
+    demo = db.get(SystemSetting, "system.demo_data")
+    return {"initialized": svc.is_initialized(db), "demo_data": bool(demo and demo.value)}
 
 
 @router.post("/setup/initialize", tags=["setup"], status_code=201)
