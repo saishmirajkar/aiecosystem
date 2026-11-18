@@ -34,6 +34,13 @@ class MovementType(str, enum.Enum):
     ADJUSTMENT = "adjustment"
     RECONCILIATION = "reconciliation"
     STATUS_CHANGE = "status_change"
+    # Company X production flow (client/company-x)
+    JOB_WORK_OUT = "job_work_out"          # material sent to a job-work vendor (location move)
+    JOB_WORK_RETURN = "job_work_return"    # material back from a vendor, unchanged item (location move)
+    PRODUCTION_CONSUME = "production_consume"
+    PRODUCTION_OUTPUT = "production_output"
+    PRODUCTION_SCRAP = "production_scrap"
+    DISPATCH = "dispatch"                  # shipped to a customer
 
 
 class TransferStatus(str, enum.Enum):

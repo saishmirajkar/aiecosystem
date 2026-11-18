@@ -33,8 +33,9 @@ Q4 = Decimal("0.0001")
 Q6 = Decimal("0.000001")
 
 VALUED_TYPES = {MovementType.OPENING, MovementType.RECEIPT, MovementType.STOCK_IN, MovementType.ISSUE,
-                MovementType.ADJUSTMENT, MovementType.RECONCILIATION}
-HIGH_VALUE_TYPES = {MovementType.ISSUE, MovementType.TRANSFER_OUT}
+                MovementType.ADJUSTMENT, MovementType.RECONCILIATION, MovementType.PRODUCTION_CONSUME,
+                MovementType.PRODUCTION_OUTPUT, MovementType.PRODUCTION_SCRAP, MovementType.DISPATCH}
+HIGH_VALUE_TYPES = {MovementType.ISSUE, MovementType.TRANSFER_OUT, MovementType.DISPATCH}
 
 
 @dataclass

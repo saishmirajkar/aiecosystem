@@ -112,6 +112,10 @@ SEQUENCES = {
     "purchase_requisition": "PR",
     "purchase_order": "PO",
     "goods_receipt": "GRN",
+    "production_order": "MO",
+    "job_work_challan": "JWC",
+    "job_work_receipt": "JWR",
+    "dispatch_note": "DN",
 }
 
 

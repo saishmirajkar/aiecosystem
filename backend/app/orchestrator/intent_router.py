@@ -12,17 +12,14 @@ from app.orchestrator.agent_registry import AgentRegistry
 
 # Departments that exist as organisational records but have no system/agent yet.
 UNCONNECTED_DEPARTMENTS: dict[str, tuple[str, list[str]]] = {
-    "PROD": ("Production", ["production order", "production plan", "production schedule", "work centre", "work center", "oee",
-                            "shop floor", "manufacturing order", "bill of materials", "bom", "routing", "output today"]),
-    "QA": ("Quality", ["quality", "inspection", "defect", "ncr", "non-conformance", "rejection rate", "capa", "audit finding"]),
+    "QA": ("Quality", ["quality", "inspection", "defect", "ncr", "non-conformance", "capa", "audit finding"]),
     "MAINT": ("Maintenance", ["maintenance", "breakdown", "downtime", "preventive", "machine health", "mtbf", "mttr"]),
     "FIN": ("Finance and Accounts", ["invoice", "payable", "receivable", "payment", "profit", "revenue", "cash flow",
                                      "balance sheet", "gst", "tax return", "budget", "expense", "p&l"]),
     "HR": ("HR and Workforce", ["payroll", "salary", "salaries", "attendance", "leave", "employee", "hiring", "recruit",
                                 "headcount", "overtime", "shift roster"]),
-    "LOG": ("Logistics and Dispatch", ["shipment", "dispatch", "freight", "vehicle", "e-way bill", "eway bill", "transporter",
-                                       "outbound delivery", "route plan"]),
-    "CRM": ("CRM and Sales", ["customer", "lead", "leads", "sales order", "quotation", "deal", "pipeline", "opportunit", "crm"]),
+    "LOG": ("Logistics", ["freight", "e-way bill", "eway bill", "fleet", "route plan", "vehicle tracking"]),
+    "CRM": ("CRM and Sales", ["lead", "leads", "sales order", "quotation", "deal", "pipeline", "opportunit", "crm"]),
 }
 
 BRIEFING = re.compile(r"\b(what needs my attention|needs (my )?attention|briefing|what should i (look at|focus)|anything urgent|"
@@ -55,7 +52,9 @@ class IntentRouter:
             decision.agent_ids = [a for a in scores]  # every connected agent contributes to a briefing
             decision.reason = "briefing across connected departments"
             return decision
-        matched = [a for a, s in sorted(scores.items(), key=lambda kv: -kv[1]) if s > 0]
+        top = max(scores.values(), default=0)
+        # Agents scoring at least half of the best match contribute (e.g. a stock + production question asks both).
+        matched = [a for a, s in sorted(scores.items(), key=lambda kv: -kv[1]) if s > 0 and s * 2 >= top]
         if matched:
             decision.agent_ids = matched
             decision.reason = "keyword match: " + ", ".join(matched)

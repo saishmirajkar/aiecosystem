@@ -13,6 +13,11 @@ from app.models.master import (
     LocationType, Product, ProductCategory, ProductSupplier, ProductType, StorageLocation, Supplier,
     UnitConversion, UnitOfMeasure, UomCategory, Warehouse,
 )
+from app.models.production import (
+    BomLine, Customer, DispatchLine, DispatchNote, DispatchStatus, JobWorkChallan, JobWorkChallanLine, JobWorkReceipt,
+    OrderPart, OrderStage, OrderStatus, PartSource, Performer, ProductionEvent, ProductionOrder, ProductionSite, RouteStage,
+    SiteKind, StageCompletion, StageStatus,
+)
 from app.models.purchasing import (
     GoodsReceipt, GoodsReceiptItem, GRNStatus, POStatus, PurchaseOrder, PurchaseOrderItem, PurchaseRequisition,
     PurchaseRequisitionItem, RequisitionStatus,

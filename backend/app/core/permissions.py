@@ -55,6 +55,12 @@ PERMISSIONS: list[PermissionDef] = [
     P("purchasing.po.create", "Create and edit purchase orders", "purchasing"),
     P("purchasing.po.approve", "Approve purchase orders", "purchasing"),
     P("purchasing.over_receipt", "Receive more than the outstanding PO quantity", "purchasing"),
+    # Production & dispatch (client/company-x)
+    P("production.view", "View production orders, routes and vendor workload", "production"),
+    P("production.manage", "Create production orders, bills of materials and routes", "production"),
+    P("production.execute", "Send material to vendors, record receipts and stage completions", "production"),
+    P("customers.manage", "Manage customers", "production"),
+    P("dispatch.manage", "Create and dispatch delivery notes", "production"),
     # Reports & AI
     P("reports.view", "Access reports and valuation", "reports"),
     P("ai.access", "Access the AI Command Center", "ai"),
@@ -64,7 +70,7 @@ PERMISSIONS: list[PermissionDef] = [
 
 ALL_CODES: frozenset[str] = frozenset(p.code for p in PERMISSIONS)
 
-_VIEW = ["inventory.view", "purchasing.view", "reports.view", "ai.access", "departments.view", "company.view"]
+_VIEW = ["inventory.view", "purchasing.view", "reports.view", "ai.access", "departments.view", "company.view", "production.view"]
 
 DEFAULT_ROLES: dict[str, dict[str, object]] = {
     "super_admin": {
@@ -86,6 +92,7 @@ DEFAULT_ROLES: dict[str, dict[str, object]] = {
             "inventory.adjust.approve", "inventory.reserve", "inventory.high_value",
             "purchasing.requisition.create", "purchasing.requisition.approve", "purchasing.po.create",
             "purchasing.po.approve", "purchasing.over_receipt", "approvals.view", "approvals.decide",
+            "production.manage", "production.execute", "customers.manage", "dispatch.manage",
         ],
     },
     "inventory_manager": {
@@ -96,7 +103,7 @@ DEFAULT_ROLES: dict[str, dict[str, object]] = {
             "inventory.receive", "inventory.issue", "inventory.transfer", "inventory.transfer.approve",
             "inventory.adjust", "inventory.adjust.approve", "inventory.reserve",
             "inventory.opening_balance", "inventory.high_value", "purchasing.requisition.create",
-            "approvals.view", "approvals.decide",
+            "approvals.view", "approvals.decide", "production.execute", "dispatch.manage",
         ],
     },
     "warehouse_manager": {
@@ -105,7 +112,8 @@ DEFAULT_ROLES: dict[str, dict[str, object]] = {
         "permissions": _VIEW + [
             "warehouses.manage", "inventory.receive", "inventory.issue", "inventory.transfer",
             "inventory.transfer.approve", "inventory.adjust", "inventory.reserve",
-            "purchasing.requisition.create", "approvals.view", "approvals.decide",
+            "purchasing.requisition.create", "approvals.view", "approvals.decide", "production.execute",
+            "dispatch.manage",
         ],
     },
     "purchase_manager": {
@@ -122,12 +130,14 @@ DEFAULT_ROLES: dict[str, dict[str, object]] = {
         "description": "Performs day-to-day stock movements.",
         "permissions": ["inventory.view", "purchasing.view", "ai.access", "inventory.receive",
                         "inventory.issue", "inventory.transfer", "inventory.adjust",
-                        "purchasing.requisition.create", "approvals.view"],
+                        "purchasing.requisition.create", "approvals.view", "production.view",
+                        "production.execute"],
     },
     "read_only": {
         "name": "Read-Only User",
         "description": "Can view inventory, purchasing and reports.",
-        "permissions": ["inventory.view", "purchasing.view", "reports.view", "company.view", "departments.view"],
+        "permissions": ["inventory.view", "purchasing.view", "reports.view", "company.view", "departments.view",
+                        "production.view"],
     },
 }
 
