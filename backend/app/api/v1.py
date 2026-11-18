@@ -1,0 +1,7 @@
+"""Aggregates all v1 domain routers."""
+from fastapi import APIRouter
+
+from app.modules.erp_core.router import router as erp_router
+
+api_router = APIRouter()
+api_router.include_router(erp_router)
