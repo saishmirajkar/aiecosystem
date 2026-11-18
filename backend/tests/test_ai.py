@@ -55,7 +55,7 @@ def test_intent_router():
 
 def test_agents_endpoint_lists_only_real_agents(client, plant):
     body = client.get("/api/v1/ai/agents", headers=plant["h"]).json()
-    assert [a["id"] for a in body["agents"]] == ["inventory"]
+    assert [a["id"] for a in body["agents"]] == ["inventory", "production"]  # client/company-x adds the Production Agent
     assert len(body["agents"][0]["tools"]) == 15 and body["engine"] == "offline"
     assert "CRM and Sales" in body["not_connected"]
 

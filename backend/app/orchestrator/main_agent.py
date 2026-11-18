@@ -20,9 +20,9 @@ from app.orchestrator.context_manager import load_history
 from app.orchestrator.dispatcher import Dispatcher
 from app.orchestrator.intent_router import IntentRouter
 
-BRIEFING_SUFFIX = ("The user asked for a general briefing. Only the Inventory department (with the purchasing foundation) is "
-                   "connected. Use get_inventory_alerts and get_pending_goods_receipts (overdue) and summarise what needs "
-                   "attention, highest severity first. State that other departments are not connected yet.")
+BRIEFING_SUFFIX = ("The user asked for a general briefing. Summarise what needs attention in your own department, highest "
+                   "severity first (inventory: alerts and overdue deliveries; production: late stages and orders at risk). "
+                   "Other agents cover their own departments; quality, maintenance, finance, HR and sales are not connected yet.")
 MAX_AGENTS_PER_REQUEST = 3
 
 

@@ -247,5 +247,9 @@ def load_demo_data(db: Session, admin: User) -> None:
     inv_svc.create_reservation(db, actor, inv.ReservationIn(product_id=products["BRG-6205"].id, warehouse_id=whs["WH-MAIN"].id,
                                                             quantity=Decimal(24), reference_type="work_order", reference_number="WO-2611"))
 
+    # client/company-x: job-work production scenario on top of the foundation demo
+    from app.modules.production.demo import load_production_demo
+    load_production_demo(db, actor, products, units, cats, whs)
+
     db.add(SystemSetting(key="system.demo_data", value=True, description="Installation contains synthetic demo data"))
     db.flush()

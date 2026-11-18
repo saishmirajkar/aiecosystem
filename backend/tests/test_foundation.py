@@ -207,7 +207,8 @@ def test_demo_data_loads_consistently(client: TestClient) -> None:
     h = login(client, ADMIN_EMAIL)
     ov = client.get("/api/v1/inventory/overview", headers=h).json()
     m = ov["metrics"]
-    assert m["active_products"] == 25 and m["warehouse_count"] == 3 and m["pos_awaiting_delivery"] >= 3
+    # client/company-x adds 5 production products, Plant A and 4 job-work vendor locations
+    assert m["active_products"] == 30 and m["warehouse_count"] == 8 and m["pos_awaiting_delivery"] >= 3
     assert m["low_stock_items"] >= 1 and m["pending_goods_receipts"] == 1
     assert sum(1 for d in ov["trend"] if d["movements"]) >= 25
     val = client.get("/api/v1/reports/inventory_valuation", headers=h).json()
@@ -215,6 +216,12 @@ def test_demo_data_loads_consistently(client: TestClient) -> None:
     total_report = sum(Decimal(r["value"]) for r in val["rows"])
     assert total_report == Decimal(m["total_stock_value"])
     login(client, "staff@demo.example.com", "Demo-Passw0rd!")
+    orders = client.get("/api/v1/production/orders", headers=h).json()["items"]
+    assert sorted(o["status"] for o in orders) == ["completed", "in_progress", "planned"]
+    live = next(o for o in orders if o["status"] == "in_progress")
+    detail = client.get(f"/api/v1/production/orders/{live['id']}", headers=h).json()
+    kinds = {p["kind"] for part in detail["parts"] for p in part["positions"]}
+    assert {"at_vendor", "done"} <= kinds
 
 
 def test_reset_token_never_logged_in_production(client: TestClient, installed: dict, caplog, monkeypatch) -> None:

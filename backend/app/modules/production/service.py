@@ -295,6 +295,7 @@ def release_order(db: Session, actor: Actor, order_id: uuid.UUID) -> ProductionO
     order.status, order.released_at = OrderStatus.RELEASED, utcnow()
     _event(db, actor, order, "released", "Order released to the plant")
     audit(db, actor, "production.order_release", "production_order", order.id)
+    db.flush()
     return order
 
 
@@ -315,6 +316,7 @@ def cancel_order(db: Session, actor: Actor, order_id: uuid.UUID, reason: str) ->
     order.status, order.cancel_reason = OrderStatus.CANCELLED, reason
     _event(db, actor, order, "cancelled", f"Order cancelled: {reason}")
     audit(db, actor, "production.order_cancel", "production_order", order.id, {"reason": reason})
+    db.flush()
     return order
 
 
