@@ -3,6 +3,7 @@ import { Pencil, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { ProductImage } from "@/components/Attachments";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/overlay";
 import { DetailGrid, ErrorState, PageHeader, SearchInput, StatusBadge } from "@/components/ui/page";
@@ -194,6 +195,7 @@ function SuppliersEditor({ product }: { product: Product }) {
 
 export function ProductDetailPage() {
   const { id } = useParams();
+  const { can } = useAuth();
   const [editing, setEditing] = useState(false);
   const stock = useQuery({ queryKey: ["product", id, "stock"], queryFn: () => api.get<{ product: Product; balances: Balance[] }>(`/inventory/products/${id}/stock`) });
   const moves = useQuery({ queryKey: ["product", id, "movements"], queryFn: () => api.get<Page<Movement>>("/inventory/movements", { product_id: id, page_size: 15 }) });
@@ -214,7 +216,9 @@ export function ProductDetailPage() {
       </div>
       <Card>
         <CardHeader title="Master data" />
-        <div className="p-5"><DetailGrid items={[
+        <div className="flex flex-col gap-6 p-5 sm:flex-row">
+        <ProductImage productId={p.id} attachmentId={p.image_attachment_id} canEdit={can("products.edit")} onChanged={() => stock.refetch()} />
+        <div className="min-w-0 flex-1"><DetailGrid items={[
           { label: "Type", value: label(p.product_type) }, { label: "Category", value: p.category_name }, { label: "Unit", value: p.uom_code },
           { label: "Manufacturer", value: p.manufacturer }, { label: "Purchase price", value: money(p.purchase_price) },
           { label: "Standard cost", value: money(p.standard_cost) }, { label: "Selling price", value: money(p.selling_price) },
@@ -223,6 +227,7 @@ export function ProductDetailPage() {
           { label: "Tracking", value: [p.track_batches && "Batch", p.track_expiry && "Expiry", p.track_serials && "Serial"].filter(Boolean).join(", ") || "None" },
           { label: "Updated", value: dateTime(p.updated_at) },
         ]} />{p.description && <p className="mt-4 text-sm text-fg-2">{p.description}</p>}</div>
+        </div>
       </Card>
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>

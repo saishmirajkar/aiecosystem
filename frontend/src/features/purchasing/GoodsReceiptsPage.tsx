@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AttachmentsPanel } from "@/components/Attachments";
 import { LocationSelect } from "@/components/pickers";
 import { DataTable } from "@/components/ui/data-table";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
@@ -148,6 +149,8 @@ export function GoodsReceiptDetailPage() {
           { key: "rr", header: "Rejection reason", hideBelow: "lg", cell: (i) => <span className="text-xs">{i.rejection_reason ?? "—"}</span> },
         ]} />
       </Card>
+      <AttachmentsPanel entityType="goods_receipt" entityId={d.id} canUpload={can("inventory.receive")} title="Delivery documentation"
+        description="Delivery note, invoice, inspection photos. PDF or images up to 10 MB." />
       <Dialog open={dialog === "over"} onOpenChange={(o) => !o && setDialog(null)} title="Over-receipt requires authorisation"
         description="One or more lines exceed the outstanding purchase order quantity. An authorised user must record a reason."
         footer={<><Button onClick={() => setDialog(null)}>Cancel</Button><Button variant="primary" disabled={overReason.trim().length < 3 || !can("purchasing.over_receipt")} loading={confirm.isPending} onClick={() => confirm.mutate(overReason.trim())}>Confirm with exception</Button></>}>

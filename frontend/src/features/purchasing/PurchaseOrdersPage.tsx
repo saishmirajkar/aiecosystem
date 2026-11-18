@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PackageCheck, Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { AttachmentsPanel } from "@/components/Attachments";
 import { LineItems, linesValid, newLine, type LineBase } from "@/components/LineItems";
 import { WarehouseSelect } from "@/components/pickers";
 import { DataTable } from "@/components/ui/data-table";
@@ -150,6 +151,7 @@ export function PurchaseOrderDetailPage() {
             { key: "s", header: "Status", cell: (g) => <StatusBadge status={g.status} /> },
           ]} />
       </Card>
+      <AttachmentsPanel entityType="purchase_order" entityId={d.id} canUpload={can("purchasing.po.create")} title="Order documents" />
       <ConfirmDialog open={dialog === "reject"} onOpenChange={(o) => !o && setDialog(null)} title="Reject purchase order" description="Returns the PO to draft for correction." requireReason tone="danger" confirmLabel="Reject"
         loading={act.isPending} onConfirm={(reason) => act.mutate({ action: "reject", body: { reason } })} />
       <ConfirmDialog open={dialog === "cancel"} onOpenChange={(o) => !o && setDialog(null)} title="Cancel purchase order" requireReason tone="danger" confirmLabel="Cancel PO"

@@ -44,6 +44,7 @@ This document defines the conventions every endpoint follows and the endpoint ca
 | POST | `/auth/login` | public | `{email, password}` → `{user, token, expires_at}` + cookie |
 |---|---|---|---|
 | POST | `/auth/logout` | authenticated | Revokes session |
+| GET | `/auth/session` | public | `{authenticated, user}` — non-erroring probe used by the SPA on load |
 | GET | `/auth/me` | authenticated | User, roles, permissions, departments, warehouse scope |
 | PATCH | `/auth/me` | authenticated | Profile fields |
 | POST | `/auth/change-password` | authenticated | Revokes other sessions |
@@ -63,11 +64,11 @@ This document defines the conventions every endpoint follows and the endpoint ca
 | GET/PATCH | `/settings` | `settings.view` / `settings.manage` |
 | GET | `/audit-logs` | `audit.view` |
 | GET/PUT | `/notifications/preferences` | authenticated |
-| GET | `/notifications` · POST `/notifications/{id}/read` | authenticated |
-| POST | `/attachments` · GET `/attachments/{id}` | authenticated (+ entity permission) |
+| GET | `/notifications` · POST `/notifications/{id}/read` · POST `/notifications/read-all` | authenticated |
+| POST | `/attachments` · GET `/attachments?entity_type&entity_id` · GET `/attachments/{id}` | authenticated (+ entity permission) |
 
 ### Master data
-| GET/POST | `/units` · PATCH `/units/{id}` · GET/POST `/units/conversions` | `inventory.view` / `masterdata.manage` |
+| GET/POST | `/units` · PATCH `/units/{id}` · GET/POST `/unit-conversions` | `inventory.view` / `masterdata.manage` |
 |---|---|---|
 | GET/POST | `/categories` · PATCH `/categories/{id}` | `inventory.view` / `masterdata.manage` |
 | GET/POST | `/products` · GET/PATCH `/products/{id}` | `inventory.view` / `products.create`, `products.edit` |
@@ -81,7 +82,8 @@ This document defines the conventions every endpoint follows and the endpoint ca
 |---|---|---|---|
 | GET | `/inventory/balances` | `inventory.view` | Filters: product, warehouse, location, status, category, `low_stock` |
 | GET | `/inventory/products/{id}/stock` | `inventory.view` | Per warehouse/location/batch breakdown |
-| GET | `/inventory/movements` | `inventory.view` | Ledger with filters and date range |
+| GET | `/inventory/movements` | `inventory.view` | Ledger with filters (`product_id`, `warehouse_id`, `movement_type`, `date_from/to`, `direction`, `reference`, `q`) |
+| GET | `/inventory/transactions/{id}` | `inventory.view` | Posting header with its ledger lines |
 | POST | `/inventory/opening-balances` | `inventory.opening_balance` | Idempotent |
 | POST | `/inventory/receipts` | `inventory.receive` | Non-PO stock-in (e.g. returns from production); idempotent |
 | POST | `/inventory/issues` | `inventory.issue` | Stock-out; idempotent |
@@ -113,3 +115,24 @@ This document defines the conventions every endpoint follows and the endpoint ca
 | GET | `/ai/suggestions` | `ai.access` |
 | GET | `/approvals` | `approvals.view` |
 | POST | `/approvals/{id}/approve` · `/approvals/{id}/reject` | `approvals.decide` + action permission |
+
+## Report identifiers
+`current_stock`, `warehouse_inventory`, `stock_movements`, `stock_in`, `stock_out`, `low_stock`,
+`overstock`, `inventory_valuation`, `stock_adjustments`, `damaged_stock`, `goods_receipts`,
+`product_history` (requires `product_id`), `supplier_purchases`. Filters per report are listed by
+`GET /reports`. JSON responses are paginated (`page`, `page_size` ≤ 1000); `?format=csv` streams
+all rows (max 50 000) with spreadsheet-formula injection neutralised.
+
+## Example: posting a stock issue
+```http
+POST /api/v1/inventory/issues
+Authorization: Bearer <token>
+Idempotency-Key: 6f1c3b0e-6a43-4c55-8f7e-0c4d2f1d9a10
+Content-Type: application/json
+
+{"reason": "Issued to machining", "reference_number": "WO-2417",
+ "lines": [{"product_id": "…", "warehouse_id": "…", "quantity": "40"}]}
+```
+`201` → `TransactionOut` with one ledger line per allocated balance (FEFO, then default location).
+`409 insufficient_stock` when available stock (on hand − reserved) is short; nothing is posted.
+

@@ -83,8 +83,13 @@ POST /ai/chat {conversation_id?, message}
   terms are also present.
 * Briefing questions ("what needs my attention today") → `inventory` alert briefing **plus** a
   notice that other departments are not connected.
-* With Claude configured and no keyword match, a small classification call chooses among
-  active agents or `none`.
+* No recognisable department vocabulary → the message goes to the connected agent(s), which
+  answer within their own scope (and say so when a question is out of scope). Routing is
+  deliberately rule-based and logged (`agent_execution_logs.event = 'routing'`) so decisions
+  are transparent and deterministic; an LLM classifier can be added behind the same
+  `IntentRouter.route()` interface once several department agents exist.
+* Up to 3 agents per request (`MAX_AGENTS_PER_REQUEST`); each runs independently and the
+  consolidator merges their sections.
 
 ### Engines
 * **Claude engine** — Messages API (beta endpoint for `fallbacks`), model from
@@ -124,6 +129,30 @@ POST /ai/chat {conversation_id?, message}
 
 Action outcomes: requisition → created as `pending_approval` requisition; transfer → `draft`
 transfer; adjustment → `pending_approval` adjustment (still needs its own approval to post).
+
+**Who may decide:** the approver must hold the action's `required_permission`. Confirming
+*your own* AI-prepared draft needs nothing more (it is equivalent to doing the action
+manually); approving *someone else's* request additionally requires `approvals.decide`.
+
+## Testing the agent layer
+`backend/tests/test_ai.py` covers routing, the offline engine end-to-end on real data, the
+approval lifecycle (binding, expiry, single use, permissions), conversation isolation, audit
+rows, tool-argument validation, and the Claude loop driven by a **scripted fake Anthropic
+client** (tool execution, permission denials returned as `is_error`, invalid arguments,
+refusal, iteration budget, provider outage → offline fallback, prompt-injection text treated
+as data). The Claude engine has not been exercised against the live API in this repository's
+test suite because no API key is configured in CI; see IMPLEMENTATION_LOG for how to run a
+live check.
+
+## Model configuration
+| Variable | Default | Notes |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | empty | Empty → offline engine |
+| `ANTHROPIC_MODEL` | `claude-opus-5-5` | Any current Claude model ID |
+| `ANTHROPIC_EFFORT` | `medium` | `low` … `max`; Opus 5.5 defaults to `medium` |
+| `ANTHROPIC_FALLBACKS_ENABLED` | `true` | Server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`) |
+| `AI_ENGINE` | `auto` | `auto` / `claude` / `offline` |
+| `AI_MAX_ITERATIONS` / `AI_MAX_TOOL_CALLS` | 8 / 12 | Per request |
 
 ## Prompt-injection resistance
 * User messages, conversation history and tool output are treated as data. Tool output is
