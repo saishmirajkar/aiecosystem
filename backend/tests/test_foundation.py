@@ -29,6 +29,13 @@ def test_login_me_logout(client: TestClient, installed: dict) -> None:
     assert client.get("/api/v1/auth/me", headers=headers).status_code == 401
 
 
+def test_session_probe(client: TestClient, installed: dict) -> None:
+    assert client.get("/api/v1/auth/session").json() == {"authenticated": False, "user": None}
+    headers = login(client, ADMIN_EMAIL)
+    body = client.get("/api/v1/auth/session", headers=headers).json()
+    assert body["authenticated"] is True and body["user"]["email"] == ADMIN_EMAIL
+
+
 def test_invalid_credentials_and_lockout(client: TestClient, installed: dict) -> None:
     for _ in range(5):
         r = client.post("/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": "wrong-password-1"})

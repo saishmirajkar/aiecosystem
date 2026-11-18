@@ -71,6 +71,18 @@ def logout(actor: CurrentActor, response: Response, db: DB) -> Response:
     return response
 
 
+@router.get("/auth/session", tags=["auth"])
+def session_probe(request: Request, db: DB) -> dict:
+    """Non-erroring session check for the SPA's first load (avoids a 401 before sign-in)."""
+    from app.core.deps import get_current_actor
+    from app.core.errors import AuthenticationRequired
+    try:
+        actor = get_current_actor(request, db)
+    except AuthenticationRequired:
+        return {"authenticated": False, "user": None}
+    return {"authenticated": True, "user": s.MeOut.model_validate(svc.me_out(db, db.get(User, actor.user_id))).model_dump(mode="json")}
+
+
 @router.get("/auth/me", response_model=s.MeOut, tags=["auth"])
 def me(actor: CurrentActor, db: DB) -> dict:
     return svc.me_out(db, db.get(User, actor.user_id))  # type: ignore[arg-type]
