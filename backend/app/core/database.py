@@ -57,7 +57,7 @@ class Authored:
 
 _settings = get_settings()
 engine = create_engine(_settings.database_url, pool_pre_ping=True, pool_size=10, max_overflow=20, future=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=True, class_=Session)
 
 
 def get_db() -> Iterator[Session]:

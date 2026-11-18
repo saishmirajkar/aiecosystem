@@ -104,3 +104,38 @@ def make_user(client: TestClient, admin_headers: dict):
         return login(client, email)
 
     return _make
+
+
+class MD:
+    """Convenience builder for master data through the public API."""
+
+    def __init__(self, client: TestClient, headers: dict[str, str]):
+        self.c, self.h = client, headers
+        self.units = {u["code"]: u["id"] for u in client.get("/api/v1/units", headers=headers).json()}
+
+    def warehouse(self, code: str, name: str | None = None) -> dict:
+        r = self.c.post("/api/v1/warehouses", headers=self.h, json={"code": code, "name": name or f"Warehouse {code}"})
+        assert r.status_code == 201, r.text
+        wh = r.json()
+        locs = self.c.get(f"/api/v1/warehouses/{wh['id']}/locations", headers=self.h).json()
+        wh["main"] = next(l["id"] for l in locs if l["code"] == "MAIN")
+        wh["transit"] = next(l["id"] for l in locs if l["code"] == "TRANSIT")
+        return wh
+
+    def supplier(self, code: str = "SUP-1", name: str = "Bharat Steel Traders") -> dict:
+        r = self.c.post("/api/v1/suppliers", headers=self.h, json={"code": code, "name": name, "lead_time_days": 7})
+        assert r.status_code == 201, r.text
+        return r.json()
+
+    def product(self, sku: str, name: str, uom: str = "KG", **extra) -> dict:
+        body = {"sku": sku, "name": name, "product_type": "raw_material", "uom_id": self.units[uom],
+                "purchase_price": "80", "standard_cost": "78", "reorder_level": "100", "min_stock_level": "50",
+                "max_stock_level": "5000", "reorder_quantity": "500", **extra}
+        r = self.c.post("/api/v1/products", headers=self.h, json=body)
+        assert r.status_code == 201, r.text
+        return r.json()
+
+
+@pytest.fixture
+def md(client: TestClient, admin_headers: dict) -> MD:
+    return MD(client, admin_headers)
