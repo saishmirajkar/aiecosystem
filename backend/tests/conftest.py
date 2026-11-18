@@ -28,17 +28,23 @@ PASSWORD = "Str0ng-Passw0rd!"
 def migrated_db() -> Iterator[None]:
     cfg = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
     cfg.set_main_option("script_location", os.path.join(os.path.dirname(__file__), "..", "alembic"))
+    _truncate_all()  # data from a previous run could block downgrades (e.g. movement types in use)
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
     yield
 
 
-@pytest.fixture(autouse=True)
-def clean_db() -> Iterator[None]:
+def _truncate_all() -> None:
     with engine.begin() as conn:
         tables = conn.execute(text(
             "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename <> 'alembic_version'")).scalars().all()
-        conn.execute(text("TRUNCATE " + ", ".join(f'"{t}"' for t in tables) + " RESTART IDENTITY CASCADE"))
+        if tables:
+            conn.execute(text("TRUNCATE " + ", ".join(f'"{t}"' for t in tables) + " RESTART IDENTITY CASCADE"))
+
+
+@pytest.fixture(autouse=True)
+def clean_db() -> Iterator[None]:
+    _truncate_all()
     limiter.reset()
     yield
 
