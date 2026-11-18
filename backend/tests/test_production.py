@@ -120,6 +120,19 @@ def test_material_cannot_move_before_release(px: Plant):
     px.complete(o, "HSG-100", "Cutting", units_completed="10", status=409)
 
 
+def test_bought_in_position_counts_only_what_is_still_to_issue(px: Plant):
+    o = px.order()
+    px.post(f"/api/v1/production/orders/{o['id']}/release", {}, status=200)
+    steel = lambda: {p["kind"]: p for p in px.part(px.refresh(o), "STL-32")["positions"]}
+    assert steel()["stock"]["required"] == "12.0000" and "consumed" not in steel()
+    px.challan(o, "SFT-100", "Turning & grinding", "4")  # 4 shafts x 1.2 kg leave the plant
+    pos = steel()
+    assert pos["consumed"]["units"] == "4.8000" and pos["consumed"]["label"] == "Issued to Output shaft GB-100"
+    assert pos["stock"]["required"] == "7.2000" and pos["stock"]["short"] == "0"
+    px.challan(o, "SFT-100", "Turning & grinding", "6")
+    assert set(steel()) == {"consumed"}  # nothing left to issue
+
+
 def test_full_flow_split_direct_rework_costing_and_dispatch(client: TestClient, px: Plant):
     h = px.h
     o = px.order()

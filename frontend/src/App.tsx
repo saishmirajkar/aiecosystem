@@ -12,12 +12,15 @@ import { MovementsPage } from "@/features/inventory/MovementsPage";
 import { ReportsPage } from "@/features/inventory/ReportsPage";
 import { StockOverviewPage } from "@/features/inventory/StockOverviewPage";
 import { TransferDetailPage, TransfersPage } from "@/features/inventory/TransfersPage";
+import { ChallanPrintPage, ChallansPage, SitesPage, StructuresPage, VendorWorkloadPage } from "@/features/production/AdminPages";
+import { ProductionOrderPage, ProductionOrdersPage } from "@/features/production/OrdersPages";
 import { ProductDetailPage, ProductsPage } from "@/features/products/ProductsPage";
 import { ApprovalsPage } from "@/features/purchasing/ApprovalsPage";
 import { GoodsReceiptDetailPage, GoodsReceiptsPage } from "@/features/purchasing/GoodsReceiptsPage";
 import { PurchaseOrderDetailPage, PurchaseOrdersPage } from "@/features/purchasing/PurchaseOrdersPage";
 import { RequisitionDetailPage, RequisitionsPage } from "@/features/purchasing/RequisitionsPage";
 import { SuppliersPage } from "@/features/purchasing/SuppliersPage";
+import { CustomersPage, DispatchNotesPage } from "@/features/sales/SalesPages";
 import { AuditLogPage, CompanyPage, DepartmentsPage, ProfilePage, RolesPage, SystemSettingsPage, UnitsPage, UsersPage } from "@/features/settings/SettingsPages";
 import { WarehouseDetailPage, WarehousesPage } from "@/features/warehouses/WarehousesPage";
 import { useAuth } from "@/hooks/auth";
@@ -52,6 +55,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="production/challans/:id/print" element={<Guard perm="production.view"><ChallanPrintPage /></Guard>} />
       <Route element={<AppShell demo={!!setup.data?.demo_data} />}>
         <Route index element={<Guard perm="inventory.view"><DashboardPage /></Guard>} />
         <Route path="ai" element={<Guard perm="ai.access"><CommandCenterPage /></Guard>} />
@@ -75,6 +79,15 @@ export function App() {
         <Route path="purchasing/requisitions/:id" element={<Guard perm="purchasing.view"><RequisitionDetailPage /></Guard>} />
         <Route path="purchasing/orders" element={<Guard perm="purchasing.view"><PurchaseOrdersPage /></Guard>} />
         <Route path="purchasing/orders/:id" element={<Guard perm="purchasing.view"><PurchaseOrderDetailPage /></Guard>} />
+        {/* client/company-x */}
+        <Route path="production/orders" element={<Guard perm="production.view"><ProductionOrdersPage /></Guard>} />
+        <Route path="production/orders/:id" element={<Guard perm="production.view"><ProductionOrderPage /></Guard>} />
+        <Route path="production/vendors" element={<Guard perm="production.view"><VendorWorkloadPage /></Guard>} />
+        <Route path="production/challans" element={<Guard perm="production.view"><ChallansPage /></Guard>} />
+        <Route path="production/structures" element={<Guard perm="production.view"><StructuresPage /></Guard>} />
+        <Route path="production/sites" element={<Guard perm="production.view"><SitesPage /></Guard>} />
+        <Route path="sales/customers" element={<Guard perm="production.view"><CustomersPage /></Guard>} />
+        <Route path="sales/dispatch" element={<Guard perm="production.view"><DispatchNotesPage /></Guard>} />
         <Route path="approvals" element={<Guard perm="approvals.view"><ApprovalsPage /></Guard>} />
         <Route path="settings/company" element={<Guard perm="company.view"><CompanyPage /></Guard>} />
         <Route path="settings/users" element={<Guard perm="users.view"><UsersPage /></Guard>} />

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Boxes, Coins, ClipboardList, PackageCheck, PackageSearch, Sparkles, Truck, Warehouse } from "lucide-react";
+import { AlertTriangle, ArrowRight, Factory, Boxes, Coins, ClipboardList, PackageCheck, PackageSearch, Sparkles, Truck, Warehouse } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, CardHeader, Skeleton } from "@/components/ui/primitives";
@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { dateTime, label, money, qty, relative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Overview } from "@/types/api";
+import type { ProductionSummary } from "@/types/production";
 
 const CHART_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--chart-6)"];
 
@@ -51,6 +52,8 @@ export function DashboardPage() {
           <Stat label="POs to approve" value={qty(m.pending_purchase_orders)} hint="Draft or pending approval" icon={<ClipboardList />} to="/purchasing/orders" />
         </>}
       </div>
+
+      <Can permission="production.view"><ProductionStrip /></Can>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
@@ -144,6 +147,21 @@ export function DashboardPage() {
           </div>
         </Card>
       )}
+    </div>
+  );
+}
+
+/** client/company-x: production and job-work at a glance. */
+function ProductionStrip() {
+  const { data } = useQuery({ queryKey: ["production-summary"], queryFn: () => api.get<ProductionSummary>("/production/summary"), refetchInterval: 60_000 });
+  if (!data) return null;
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <Stat label="Open production orders" value={qty(data.open_orders)} icon={<Factory />} to="/production/orders" />
+      <Stat label="Orders at risk" value={qty(data.orders_at_risk)} tone={data.orders_at_risk ? "bad" : "ok"} hint="Planned finish after due date" to="/production/orders" />
+      <Stat label="Late stages" value={qty(data.late_stages)} tone={data.late_stages ? "warn" : "ok"} hint="Past planned end" to="/production/orders" />
+      <Stat label="Units at vendors" value={qty(data.units_at_vendors)} hint={`${money(data.value_at_vendors, { compact: true })} of company material`} to="/production/vendors" />
+      <Stat label="Overdue vendor jobs" value={qty(data.overdue_vendor_jobs)} tone={data.overdue_vendor_jobs ? "bad" : "ok"} to="/production/vendors" />
     </div>
   );
 }

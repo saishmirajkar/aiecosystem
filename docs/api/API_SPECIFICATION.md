@@ -116,6 +116,27 @@ This document defines the conventions every endpoint follows and the endpoint ca
 | GET | `/approvals` | `approvals.view` |
 | POST | `/approvals/{id}/approve` · `/approvals/{id}/reject` | `approvals.decide` + action permission |
 
+### Production & job work — `client/company-x` only
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/production/sites?kind=plant\|vendor` | `production.view` | |
+| POST | `/production/sites/plants` · `/production/sites/vendors` · `/production/sites/designate` | `production.manage` + `warehouses.manage` | vendor site from `supplier_id` |
+| GET · PUT | `/production/products/{id}/structure` | view · `production.manage` | `{bom:[{component_id, quantity}], route:[{name, performer, site_id?, rate_per_unit, planned_days}]}` |
+| GET | `/production/structures` | `production.view` | products with a structure |
+| GET · POST | `/production/orders` | view · `production.manage` | list filters `status` (comma list), `q`; create expands BOM and schedules |
+| GET | `/production/orders/{id}` | `production.view` | parts, stages, positions, kit readiness, timeline, events |
+| POST | `/production/orders/{id}/release` · `/cancel` | `production.manage` | cancel only without activity |
+| PATCH · DELETE | `/production/stages/{id}` | `production.manage` | vendor/rate locked after material moved |
+| POST | `/production/parts/{id}/stages` | `production.manage` | `after_sequence` |
+| POST | `/production/stages/{id}/challans` | `production.execute` | **Idempotency-Key**; `{vendor_site_id?, units, expected_return_date?, vehicle_number?}` |
+| POST | `/production/stages/{id}/receipts` | `production.execute` | **Idempotency-Key**; `{vendor_site_id, units_accepted, units_rework, units_scrapped, scrap_reason?, direct_to_next, receive_to_site_id?}` |
+| POST | `/production/stages/{id}/complete` | `production.execute` | **Idempotency-Key**; in-house progress |
+| GET | `/production/challans` · `/production/challans/{id}` · `/production/receipts` | `production.view` | challan includes company/vendor details for printing |
+| GET | `/production/vendors/workload` · `/production/delays` · `/production/summary` | `production.view` | |
+| GET · POST · PATCH | `/customers` · `/customers/{id}` | view · `customers.manage` | |
+| GET · POST | `/dispatch-notes` · GET `/dispatch-notes/{id}` | view · `dispatch.manage` | drafts do not move stock |
+| POST | `/dispatch-notes/{id}/dispatch` · `/cancel` | `dispatch.manage` | dispatch takes **Idempotency-Key**, posts `DISPATCH` (FEFO) |
+
 ## Report identifiers
 `current_stock`, `warehouse_inventory`, `stock_movements`, `stock_in`, `stock_out`, `low_stock`,
 `overstock`, `inventory_valuation`, `stock_adjustments`, `damaged_stock`, `goods_receipts`,

@@ -92,3 +92,35 @@ Defects found and fixed during validation: three `use_alter` foreign keys missin
 5. FIFO cost layers behind `valuation_method`.
 6. Streaming (SSE) responses in the Command Center.
 7. Next department: Procurement (full) agent, using the extension path in SYSTEM_ARCHITECTURE §7.
+
+---
+
+## Branch `client/company-x` — Company X production & job-work flow (2026-11-18)
+Scope and decisions: `docs/clients/COMPANY_X.md`.
+
+**Built**
+- Backend module `app/modules/production`: sites, structures, orders with BOM expansion and scheduling, stage editing, challans, vendor receipts (split, direct, rework, scrap), in-house completions, costing at the last stage, positions, vendor workload, delays, summary, customers, dispatch notes.
+- Migration `0003` with a guarded downgrade.
+- Production AI Agent (6 tools, one approval-gated action) registered with the Main Agent. Multi-agent routing now runs every agent scoring at least half the top score.
+- Frontend: Production and Sales & Dispatch menus, order tracker / timeline / stage dialogs, vendor workload, challans (printable), structure editor, plants & vendors, customers, dispatch notes, Overview production strip.
+- Demo: Plant A, 4 vendors, gearbox GB-100 structures, 3 orders (completed / in flight / planned).
+
+**Foundation fixes made on `main` and merged here**
+- Quantity text in stock errors ("4E+1" → "40").
+- Test database reset per session, so branches with different migrations share one test DB.
+
+**Test results (executed 2026-11-18)**
+| Check | Result |
+|---|---|
+| Backend `pytest` (PostgreSQL 16, Redis) | 110 passed |
+| Frontend `tsc` typecheck (app + node configs) | passed |
+| Frontend `vitest` | 11 passed |
+| Frontend production build | passed |
+| Playwright smoke against a live API + Vite with fresh demo data | all checks passed (desktop + mobile), including opening the order tracker, releasing MO-000003, issuing a challan from the UI and rendering the printable challan |
+| Docker image rebuild for this branch | not executed |
+
+**Known limitations**
+- ITC-04 export, vendor bills, capacity planning and serial-level traceability are not built.
+- A plant shortage is flagged on the order but does not raise a transfer request automatically.
+- Demo activity is compressed into a few days, so the demo's vendor turnaround figures are short.
+

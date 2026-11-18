@@ -87,3 +87,10 @@ body {
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 ::selection { background: var(--accent-soft); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Printable documents (job-work challan) */
+@media print {
+  .no-print { display: none !important; }
+  html, body, #root { background: #fff !important; height: auto !important; }
+  @page { margin: 14mm; }
+}

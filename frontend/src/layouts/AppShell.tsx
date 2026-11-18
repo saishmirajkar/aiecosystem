@@ -3,6 +3,7 @@ import {
   ArrowLeftRight, Bell, Boxes, Building2, ChartNoAxesCombined, ClipboardCheck, ClipboardList, FileBarChart, Gauge, KeyRound,
   LayoutGrid, LogOut, Menu, Moon, PackageCheck, PackageSearch, Ruler, ScrollText, Settings2, ShieldCheck, Sparkles, Sun,
   TriangleAlert, Truck, UserRound, Users, Warehouse, Waypoints, X, Scale, ShoppingCart, Network,
+  Factory, Container, FileText, Workflow, MapPinned, Contact, PackageOpen,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -40,6 +41,18 @@ const NAV: NavGroup[] = [
     { to: "/purchasing/requisitions", label: "Purchase Requisitions", icon: <ClipboardList />, perm: "purchasing.view" },
     { to: "/purchasing/orders", label: "Purchase Orders", icon: <ShoppingCart />, perm: "purchasing.view" },
     { to: "/approvals", label: "Approvals", icon: <ClipboardCheck />, perm: "approvals.view" },
+  ] },
+  // client/company-x: production & job work, sales & dispatch
+  { label: "Production", items: [
+    { to: "/production/orders", label: "Production Orders", icon: <Factory />, perm: "production.view" },
+    { to: "/production/vendors", label: "Vendor Workload", icon: <Container />, perm: "production.view" },
+    { to: "/production/challans", label: "Job-work Challans", icon: <FileText />, perm: "production.view" },
+    { to: "/production/structures", label: "Product Structure", icon: <Workflow />, perm: "production.view" },
+    { to: "/production/sites", label: "Plants & Vendors", icon: <MapPinned />, perm: "production.view" },
+  ] },
+  { label: "Sales & Dispatch", items: [
+    { to: "/sales/customers", label: "Customers", icon: <Contact />, perm: "production.view" },
+    { to: "/sales/dispatch", label: "Dispatch Notes", icon: <PackageOpen />, perm: "production.view" },
   ] },
   { label: "ERP Settings", items: [
     { to: "/settings/company", label: "Company", icon: <Building2 />, perm: "company.view" },

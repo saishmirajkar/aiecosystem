@@ -21,6 +21,12 @@ the real business services, and every action it proposes needs human approval.
 | AI | Inventory Agent with 15 tools; Claude engine (manual tool loop, adaptive thinking, refusal fallbacks) or deterministic offline engine; Main Agent with registry, router, dispatcher, consolidation; approvals bound to a parameter hash; per-user conversations |
 | UI | Dashboard, inventory, purchasing, AI Command Center (page + global drawer), settings — light & dark themes, responsive |
 
+> **Branch `client/company-x`** adds Company X's production and job-work flow: plants and job-work
+> vendors as stock locations, BOM + route per product, production orders with a live "where are
+> the parts" tracker and timeline, split lots, vendor-to-vendor shipments, rework/scrap, printable
+> job-work challans, costing that includes vendor rates, customers and dispatch, and a Production
+> AI Agent. See [`docs/clients/COMPANY_X.md`](docs/clients/COMPANY_X.md).
+
 CRM and the other department systems are intentionally **not** included; the architecture is
 ready for them (see `docs/architecture/SYSTEM_ARCHITECTURE.md` §7).
 

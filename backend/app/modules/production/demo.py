@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import utcnow
 from app.core.deps import Actor
-from app.models import InventoryBalance, ProductionEvent, ProductionOrder
+from app.models import InventoryBalance, JobWorkChallan, JobWorkReceipt, ProductionEvent, ProductionOrder
 from app.modules.inventory import schemas as inv
 from app.modules.inventory import service as inv_svc
 from app.modules.master_data import schemas as md
@@ -165,6 +165,15 @@ def _backdate(db: Session, order: ProductionOrder, start, end) -> None:
     order.released_at = start + timedelta(hours=2)
     if order.completed_at:
         order.completed_at = end
+    # Documents carry the date of the activity that created them.
+    for ch in db.execute(select(JobWorkChallan).where(JobWorkChallan.order_id == order.id)).scalars():
+        ev = next((e for e in events if e.message.endswith(f"({ch.challan_number})")), None)
+        if ev:
+            ch.challan_date = ev.created_at.date()
+    for rc in db.execute(select(JobWorkReceipt).where(JobWorkReceipt.order_id == order.id)).scalars():
+        ev = next((e for e in events if e.message.endswith(f"({rc.receipt_number})")), None)
+        if ev:
+            rc.received_date = ev.created_at.date()
     for part in order.parts:
         for st in part.stages:
             evs = [e.created_at for e in events if e.stage_id == st.id]

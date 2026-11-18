@@ -515,9 +515,21 @@ def order_detail(db: Session, order: ProductionOrder) -> dict[str, Any]:
                 positions.append({"kind": "consumed", "label": f"Used in {parent.product.name}", "site_name": order.plant.name,
                                   "units": consumed, "stage": None})
         else:
-            avail = _available_at(db, p.product_id, order.plant_id)
-            positions.append({"kind": "stock", "label": "Bought-in, from stock", "site_name": order.plant.name,
-                              "units": avail, "required": p.quantity, "short": max(p.quantity - avail, ZERO)})
+            # Bought-in component: what has already gone into the parent's route has been issued; the rest is
+            # still required from plant stock (the parent's first stage takes the kit from the plant).
+            parent = by_id.get(p.parent_id)
+            if parent is not None and parent.stages:
+                remaining = min((stats[parent.stages[0].id]["waiting_at_plant"] * p.qty_per_parent).quantize(Q4), p.quantity)
+            else:
+                remaining = p.quantity
+            issued = p.quantity - remaining
+            if issued > 0:
+                positions.append({"kind": "consumed", "label": f"Issued to {parent.product.name}" if parent else "Issued",
+                                  "site_name": order.plant.name, "units": issued, "stage": None})
+            if remaining > 0:
+                avail = _available_at(db, p.product_id, order.plant_id)
+                positions.append({"kind": "stock", "label": "Bought-in, to issue from stock", "site_name": order.plant.name,
+                                  "units": min(avail, remaining), "required": remaining, "short": max(remaining - avail, ZERO)})
         kit_status = []
         if p.source == PartSource.MAKE and p.stages and order.status in (OrderStatus.PLANNED, *ACTIVE_ORDER):
             first = stats[p.stages[0].id]["waiting_at_plant"]

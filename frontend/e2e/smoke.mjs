@@ -20,6 +20,10 @@ const PAGES = [
   ["/approvals", "Action approvals"], ["/settings/company", "Company"], ["/settings/users", "Users"], ["/settings/roles", "Roles"],
   ["/settings/departments", "Departments"], ["/settings/units", "Units of measurement"], ["/settings/system", "System settings"],
   ["/settings/audit", "Audit log"], ["/profile", "Profile"],
+  // client/company-x
+  ["/production/orders", "Production orders"], ["/production/vendors", "Vendor workload"], ["/production/challans", "Job-work challans"],
+  ["/production/structures", "Product structure"], ["/production/sites", "Plants & vendors"], ["/sales/customers", "Customers"],
+  ["/sales/dispatch", "Dispatch notes"],
 ];
 
 const failures = [];
@@ -48,7 +52,7 @@ async function run(contextOpts, label, full) {
     const errorState = await page.getByText("Couldn’t load this data").count();
     check(h1?.includes(heading) && errorState === 0, `[${label}] ${path} renders "${heading}"`);
     await page.waitForTimeout(700); // let chart animations settle
-    if (SHOTS && ["/", "/inventory/products", "/inventory/stock", "/purchasing/orders", "/settings/roles"].includes(path)) {
+    if (SHOTS && ["/", "/inventory/products", "/inventory/stock", "/purchasing/orders", "/settings/roles", "/production/vendors", "/production/structures"].includes(path)) {
       await page.screenshot({ path: `${SHOTS}/${label}${(path === "/" ? "_home" : path.replaceAll("/", "_"))}.png`, fullPage: label === "desktop" });
     }
   }
@@ -60,6 +64,28 @@ async function run(contextOpts, label, full) {
     await page.waitForURL(/\/inventory\/products\/.+/);
     await page.getByText("Stock by location").waitFor();
     check(true, `[${label}] product detail opens from list`);
+
+    // client/company-x: order tracker → send to vendor → printable challan
+    await page.goto(`${BASE}/production/orders`);
+    await page.getByRole("row").filter({ hasText: "MO-000002" }).click();
+    await page.getByText("Where every part is").waitFor();
+    check(await page.getByText(/at Precision Machining Works|· Machining/).count() > 0, `[${label}] order tracker shows parts at vendors`);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${label}_production_order.png`, fullPage: true });
+    await page.goto(`${BASE}/production/orders`);
+    await page.getByRole("row").filter({ hasText: "MO-000003" }).click();
+    await page.getByText("Where every part is").waitFor();
+    await page.getByRole("button", { name: "Release to plant" }).click();
+    await page.getByText(/Order released/i).first().waitFor({ timeout: 10000 });
+    await page.locator("tr", { hasText: "Output shaft" }).first().click();
+    await page.getByRole("button", { name: "Send to vendor" }).first().click();
+    await page.getByRole("dialog").getByLabel(/Units/).fill("4");
+    await page.getByRole("button", { name: "Issue challan" }).click();
+    await page.getByText("Challan issued").first().waitFor({ timeout: 10000 });
+    check(true, `[${label}] challan issued from order stage`);
+    await page.getByRole("link", { name: /^JWC-/ }).first().click();
+    await page.getByText("Delivery challan").waitFor();
+    check(await page.getByText("not for sale").count() > 0, `[${label}] printable challan renders`);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${label}_challan.png`, fullPage: true });
 
     // AI Command Center: question with verified card
     await page.goto(`${BASE}/ai`);
