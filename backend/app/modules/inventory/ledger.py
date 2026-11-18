@@ -71,6 +71,11 @@ def q4(v: Decimal) -> Decimal:
     return v.quantize(Q4, rounding=ROUND_HALF_UP)
 
 
+def qtext(v: Decimal) -> str:
+    """Human-readable quantity: 40.0000 → '40', 2.5000 → '2.5' (never scientific notation like '4E+1')."""
+    return format(q4(Decimal(v)).normalize(), "f")
+
+
 def get_or_create_batch(db: Session, product: Product, batch_number: str, *, manufacturing_date: date | None = None,
                         expiry_date: date | None = None, supplier_id: uuid.UUID | None = None,
                         supplier_batch_ref: str | None = None) -> ProductBatch:
@@ -121,7 +126,7 @@ def _apply_serials(db: Session, product: Product, line: Line, location: StorageL
     serials = [s.strip() for s in (line.serial_numbers or []) if s and s.strip()]
     qty = abs(line.quantity)
     if qty != qty.to_integral_value() or len(serials) != int(qty) or len(set(serials)) != len(serials):
-        raise ValidationFailed(f"Provide exactly {qty.normalize()} unique serial numbers for {product.sku}",
+        raise ValidationFailed(f"Provide exactly {qtext(qty)} unique serial numbers for {product.sku}",
                                details={"product_id": str(product.id)})
     existing = {s.serial_number: s for s in db.execute(select(ProductSerialNumber).where(
         ProductSerialNumber.product_id == product.id, ProductSerialNumber.serial_number.in_(serials))
@@ -220,13 +225,13 @@ def post(db: Session, actor: Actor, posting: Posting) -> InventoryTransaction:
             if new_on_hand < 0 and not allow_negative:
                 raise InsufficientStock(
                     f"Insufficient stock for {product.sku} at {loc.warehouse.code}/{loc.path}: "
-                    f"on hand {q4(bal.qty_on_hand).normalize()}, requested {q4(-l.quantity).normalize()}",
+                    f"on hand {qtext(bal.qty_on_hand)}, requested {qtext(-l.quantity)}",
                     details={"product_id": str(product.id), "location_id": str(loc.id),
                              "on_hand": format(bal.qty_on_hand, "f"), "requested": format(-l.quantity, "f")})
             if free_after < 0 and new_on_hand >= 0:
                 raise InsufficientStock(
                     f"Stock for {product.sku} at {loc.path} is reserved: available "
-                    f"{q4(bal.qty_on_hand - bal.qty_reserved).normalize()}, requested {q4(-l.quantity).normalize()}",
+                    f"{qtext(bal.qty_on_hand - bal.qty_reserved)}, requested {qtext(-l.quantity)}",
                     details={"product_id": str(product.id), "reserved": format(bal.qty_reserved, "f")})
         bal.qty_on_hand = new_on_hand
         bal.last_movement_at = now

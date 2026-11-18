@@ -63,6 +63,7 @@ def test_negative_stock_prevented_by_default(client, setup):
     r = client.post("/api/v1/inventory/issues", headers={**h, **key()}, json={
         "reason": "Too much", "lines": [{"product_id": steel["id"], "location_id": a["main"], "quantity": "11"}]})
     assert r.status_code == 409 and r.json()["error"]["code"] == "insufficient_stock"
+    assert "on hand 10, requested 11" in r.json()["error"]["message"]  # no scientific notation (e.g. '1E+1')
     assert Decimal(stock(client, h, steel)["physical"]) == 10
 
 

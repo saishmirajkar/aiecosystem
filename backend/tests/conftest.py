@@ -28,7 +28,12 @@ PASSWORD = "Str0ng-Passw0rd!"
 def migrated_db() -> Iterator[None]:
     cfg = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
     cfg.set_main_option("script_location", os.path.join(os.path.dirname(__file__), "..", "alembic"))
-    _truncate_all()  # data from a previous run could block downgrades (e.g. movement types in use)
+    # Start from an empty schema so leftovers from another branch or run cannot interfere,
+    # then prove the migrations apply, roll back and re-apply.
+    with engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+    command.upgrade(cfg, "head")
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
     yield

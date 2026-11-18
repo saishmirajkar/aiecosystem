@@ -18,7 +18,7 @@ from app.models import (
     StockStatus, StockTransfer, StockTransferItem, StorageLocation, TransferStatus, Warehouse,
 )
 from app.modules.inventory import schemas as s
-from app.modules.inventory.ledger import Line, Posting, get_or_create_batch, post, q4
+from app.modules.inventory.ledger import Line, Posting, get_or_create_batch, post, q4, qtext
 
 
 def _product(db: Session, pid: uuid.UUID) -> Product:
@@ -114,8 +114,8 @@ def allocate(db: Session, product: Product, warehouse_id: uuid.UUID, qty: Decima
     if remaining > 0:
         available = qty - remaining
         raise InsufficientStock(
-            f"Insufficient available stock for {product.sku}: available {q4(available).normalize()} {product.uom.code}, "
-            f"requested {q4(qty).normalize()}",
+            f"Insufficient available stock for {product.sku}: available {qtext(available)} {product.uom.code}, "
+            f"requested {qtext(qty)}",
             details={"product_id": str(product.id), "available": format(available, "f"), "requested": format(qty, "f")})
     return picks
 
@@ -432,7 +432,7 @@ def create_reservation(db: Session, actor: Actor, data: s.ReservationIn) -> Inve
         stmt = stmt.where(B.batch_id == data.batch_id)
     bal = next((b for b in db.execute(stmt).scalars() if b.qty_on_hand - b.qty_reserved >= data.quantity), None)
     if bal is None:
-        raise InsufficientStock(f"No single location has {q4(data.quantity).normalize()} {product.uom.code} of {product.sku} "
+        raise InsufficientStock(f"No single location has {qtext(data.quantity)} {product.uom.code} of {product.sku} "
                                 "available to reserve")
     bal.qty_reserved += data.quantity
     r = InventoryReservation(product_id=product.id, warehouse_id=data.warehouse_id, balance_id=bal.id, quantity=data.quantity,
