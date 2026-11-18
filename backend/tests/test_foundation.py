@@ -215,3 +215,11 @@ def test_demo_data_loads_consistently(client: TestClient) -> None:
     total_report = sum(Decimal(r["value"]) for r in val["rows"])
     assert total_report == Decimal(m["total_stock_value"])
     login(client, "staff@demo.example.com", "Demo-Passw0rd!")
+
+
+def test_reset_token_never_logged_in_production(client: TestClient, installed: dict, caplog, monkeypatch) -> None:
+    from app.core.config import get_settings
+    monkeypatch.setattr(get_settings(), "environment", "production")
+    with caplog.at_level("WARNING", logger="above.auth"):
+        client.post("/api/v1/auth/password-reset/request", json={"email": ADMIN_EMAIL})
+    assert "reset-password?token=" not in caplog.text and "no mail backend" in caplog.text

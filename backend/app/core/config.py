@@ -5,10 +5,10 @@ Every customer deployment has its own environment file; nothing here is tenant-a
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 PLACEHOLDER_SECRET = "change-me-in-production"
 
@@ -23,7 +23,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://above:above@localhost:5432/above"
     redis_url: str = "redis://localhost:6379/0"
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    # NoDecode: accept the documented comma-separated form instead of requiring JSON.
+    cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173"])
     session_cookie_name: str = "above_session"
     session_ttl_hours: int = 12
     session_idle_minutes: int = 120
@@ -54,7 +55,10 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, v: object) -> object:
-        if isinstance(v, str) and not v.strip().startswith("["):
+        if isinstance(v, str):
+            if v.strip().startswith("["):
+                import json
+                return json.loads(v)
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
 

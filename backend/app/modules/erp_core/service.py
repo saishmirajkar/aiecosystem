@@ -7,7 +7,7 @@ from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, select, text
 from sqlalchemy.orm import Session
 
 from app.core.common import DEFAULT_SETTINGS, audit, diff
@@ -65,6 +65,8 @@ def is_initialized(db: Session) -> bool:
 
 
 def initialize(db: Session, data: s.SetupIn) -> User:
+    # Serialise concurrent first-run requests: only one can create the company and super admin.
+    db.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": 7_461_001})
     if is_initialized(db):
         raise Conflict("Installation is already initialised", code="setup_already_completed")
     _check_password(data.admin.password, data.admin.email)
@@ -161,7 +163,11 @@ def request_password_reset(db: Session, email: str) -> str | None:
     audit(db, None, "auth.password_reset_requested", "user", user.id)
     settings = get_settings()
     if settings.mail_backend == "console":
-        log.warning("Password reset link for %s: %s/reset-password?token=%s", user.email, settings.frontend_url, token)
+        if settings.environment == "production":
+            # Never write usable reset tokens to production logs; an administrator can set a password instead.
+            log.warning("Password reset requested for user %s but no mail backend is configured", user.id)
+        else:
+            log.warning("Password reset link for %s: %s/reset-password?token=%s", user.email, settings.frontend_url, token)
     return token
 
 
