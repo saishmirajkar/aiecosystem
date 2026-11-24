@@ -129,3 +129,23 @@ Design, decisions and data model: `docs/workforce/WORKFORCE_ARCHITECTURE.md`.
 - `time` values in audit JSON.
 - Stricter rule for adding a secondary agent.
 - Frontend login keeps the session query bound (fixes a race after sign-in).
+
+**Test results (executed 2026-11-24)**
+| Check | Result |
+|---|---|
+| Backend `pytest` (PostgreSQL 16, Redis), whole suite | 124 passed |
+| Workforce: 10 scenarios from the brief + rules, privacy, permissions, idempotency | 25 passed |
+| Concurrency: 9 threads claiming a 1-position offer through the API; 9 threads with separate DB sessions claiming a 3-position offer | exactly 1 and exactly 3 winners |
+| Workforce Agent | 6 passed |
+| Migration 0004 upgrade / downgrade / re-upgrade, model drift check | passed |
+| Frontend typecheck, `vitest` (16 tests), production build | passed |
+| Playwright smoke on a live API + Vite with fresh demo data | 64 checks passed, including: employee applies for leave on a phone (employee-code login) → manager approves → opportunity published → eligible colleague notified without the absent colleague's name → claims on a phone → shift in winner's schedule → later claim refused → manager sees claims log → overtime approved → HR payroll export |
+| Docker image rebuild for this branch | not executed |
+
+**Known limitations**
+- Push and WhatsApp are interfaces only (report "not connected"); email sends only with SMTP configured.
+- No biometric/RFID device API yet (CSV import covers terminal exports).
+- No full payroll processing (export only), by design for this phase.
+- Real-time updates poll every 5–30 s; server-sent events are not implemented.
+- A leave spanning two calendar years counts against the start year's balance.
+- Not merged: waiting for acceptance before `feature/workforce` → `main` → `client/company-x` (migration heads 0003/0004 will need a merge revision on the client branch).
