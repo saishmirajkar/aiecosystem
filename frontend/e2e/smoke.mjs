@@ -196,7 +196,10 @@ async function workforceFlow() {
   check(await noOverflow(cl.page), "[workforce] my shifts fits a phone screen");
 
   // 4. A second claim through the API is refused with the agreed message.
-  const late = await api(emp.page, `/overtime/opportunities/${oppId}/claim`, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } });
+  // Sent outside the page (same cookies) so the expected 409 isn't logged as a page error.
+  const lateRes = await emp.ctx.request.post(`${BASE}/api/v1/overtime/opportunities/${oppId}/claim`,
+    { headers: { "X-Requested-With": "above-web", "Idempotency-Key": crypto.randomUUID() } });
+  const late = { status: lateRes.status(), body: await lateRes.json() };
   check(late.status === 409, `[workforce] a later claim is refused (${late.body?.error?.code})`);
 
   // 5. Manager sees the claims log; approves overtime; HR exports payroll.
