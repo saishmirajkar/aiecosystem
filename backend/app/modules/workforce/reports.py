@@ -88,11 +88,12 @@ def manager_dashboard(db: Session, scope: Scope, d: date | None = None, departme
                                     .where(OvertimeCalculation.status == CalcStatus.CALCULATED, OvertimeCalculation.payable_minutes != 0))
     conflicts = scope.department_filter(select(func.count()).select_from(WorkforceConflict).where(WorkforceConflict.status == "open"),
                                         WorkforceConflict.department_id)
-    ot_by_emp = scope.employee_filter(select(Employee, func.sum(OvertimeCalculation.payable_minutes),
+    # Aggregate on ids only: grouping a full Employee entity would drag its eager-loaded joins into GROUP BY.
+    ot_by_emp = scope.employee_filter(select(Employee.id, func.sum(OvertimeCalculation.payable_minutes),
                                              func.sum(func.coalesce(OvertimeCalculation.approved_minutes, 0)))
-                                      .join(OvertimeCalculation, OvertimeCalculation.employee_id == Employee.id)
+                                      .select_from(Employee).join(OvertimeCalculation, OvertimeCalculation.employee_id == Employee.id)
                                       .where(OvertimeCalculation.work_date >= month_start, OvertimeCalculation.work_date <= d,
-                                             OvertimeCalculation.status != CalcStatus.REJECTED)
+                                             OvertimeCalculation.status != CalcStatus.REJECTED, OvertimeCalculation.payable_minutes != 0)
                                       .group_by(Employee.id).order_by(func.sum(OvertimeCalculation.payable_minutes).desc()).limit(10))
     recent_claims = scope.department_filter(select(OvertimeClaim, OvertimeOpportunity).join(OvertimeOpportunity, OvertimeOpportunity.id == OvertimeClaim.opportunity_id)
                                             .order_by(OvertimeClaim.created_at.desc()).limit(12), OvertimeOpportunity.department_id)
@@ -111,8 +112,8 @@ def manager_dashboard(db: Session, scope: Scope, d: date | None = None, departme
         "filled_last_7_days": db.execute(filled).scalar_one(),
         "pending": {"leave": db.execute(pend_leave).scalar_one(), "corrections": db.execute(pend_corr).scalar_one(),
                     "overtime": db.execute(pend_ot).scalar_one(), "conflicts": db.execute(conflicts).scalar_one()},
-        "overtime_by_employee": [{"employee": employee_brief(e), "hours": hours(int(p or 0)), "approved_hours": hours(int(ap or 0))}
-                                 for e, p, ap in db.execute(ot_by_emp).unique().all()],
+        "overtime_by_employee": [{"employee": employee_brief(db.get(Employee, eid)), "hours": hours(int(p or 0)), "approved_hours": hours(int(ap or 0))}
+                                 for eid, p, ap in db.execute(ot_by_emp).all()],
         "coverage": coverage(db, scope, d, department_id),
         "recent_claims": [{"employee": employee_brief(c.employee), "opportunity": o.number, "title": o.title, "outcome": c.outcome.value,
                            "reason": c.reason, "at": c.created_at} for c, o in db.execute(recent_claims).unique().all()],

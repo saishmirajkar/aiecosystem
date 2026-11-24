@@ -55,8 +55,10 @@ def user_out(db: Session, user: User) -> dict[str, Any]:
 
 
 def me_out(db: Session, user: User) -> dict[str, Any]:
+    from app.models import Employee
     actor = build_actor(db, user)
-    return {**user_out(db, user), "permissions": sorted(actor.permissions), "company": get_company(db)}
+    employee_id = db.execute(select(Employee.id).where(Employee.user_id == user.id)).scalar_one_or_none()
+    return {**user_out(db, user), "permissions": sorted(actor.permissions), "company": get_company(db), "employee_id": employee_id}
 
 
 # ------------------------------------------------------------------ setup

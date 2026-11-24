@@ -33,15 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (c) configureFormatting({ locale: c.number_format, currency: c.currency_code, timeZone: c.timezone });
   }, [me.data]);
 
+  // Drop every cached query except the session itself: clearing "me" too would detach the observer above, and the new
+  // user would only appear after some unrelated re-render.
+  const dropUserData = useCallback(() => qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" }), [qc]);
+
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.post<{ user: Me }>("/auth/login", { email, password });
-    qc.clear();
+    dropUserData();
     qc.setQueryData(["me"], res.user);
-  }, [qc]);
+  }, [qc, dropUserData]);
 
   const logout = useCallback(async () => {
-    try { await api.post("/auth/logout"); } finally { qc.clear(); qc.setQueryData<Me | null>(["me"], null); }
-  }, [qc]);
+    try { await api.post("/auth/logout"); } finally { qc.setQueryData<Me | null>(["me"], null); dropUserData(); }
+  }, [qc, dropUserData]);
 
   const value = useMemo<AuthState>(() => {
     const perms = new Set(me.data?.permissions ?? []);

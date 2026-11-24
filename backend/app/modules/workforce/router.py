@@ -750,20 +750,20 @@ def dashboard(db: DB, actor: Actor = Depends(VIEW), day: date | None = None, dep
     return jsonable(rp.manager_dashboard(db, get_scope(db, actor), day, department_id))
 
 
-@router.get("/reports/workforce")
+@router.get("/workforce/reports/workforce")
 def workforce_report(db: DB, actor: Actor = Depends(VIEW), date_from: date | None = None, date_to: date | None = None) -> dict:
     d1 = date_to or _today(db)
     return jsonable(rp.workforce_report(db, get_scope(db, actor), date_from or d1.replace(day=1), d1))
 
 
-@router.get("/reports/overtime")
+@router.get("/workforce/reports/overtime")
 def overtime_report(db: DB, actor: Actor = Depends(VIEW), date_from: date | None = None, date_to: date | None = None,
                     group_by: str = Query("employee", pattern="^(employee|department)$"), department_id: uuid.UUID | None = None) -> dict:
     d1 = date_to or _today(db)
     return jsonable(rp.overtime_report(db, get_scope(db, actor), date_from or d1.replace(day=1), d1, group_by, department_id))
 
 
-@router.get("/reports/attendance")
+@router.get("/workforce/reports/attendance")
 def attendance_report(db: DB, actor: Actor = Depends(VIEW), date_from: date | None = None, date_to: date | None = None,
                       department_id: uuid.UUID | None = None) -> dict:
     d1 = date_to or _today(db)

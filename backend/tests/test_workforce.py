@@ -417,6 +417,15 @@ def test_attendance_drives_overtime_approval_and_payroll_export(wf: Factory):
     assert by_rev[0]["status"] == "exported" and by_rev[0]["payable_minutes"] == 90
     assert by_rev[1]["is_correction"] and by_rev[1]["payable_minutes"] == 60 and by_rev[1]["status"] == "calculated"
 
+    # Dashboards and reports aggregate the same records.
+    dash = wf.get("/workforce/dashboard", wf.mgr, day=str(past))
+    assert dash["overtime_by_employee"][0]["employee"]["employee_code"] == "EMP-B"
+    rep = wf.get("/workforce/reports/overtime", wf.hr, date_from=str(past), date_to=str(past))
+    assert rep["rows"][0]["payable_minutes"] == 150 and rep["totals"]["amount"]
+    assert "amount" not in wf.get("/workforce/reports/overtime", wf.mgr, date_from=str(past), date_to=str(past))["totals"]
+    assert wf.get("/workforce/reports/attendance", wf.mgr, date_from=str(past), date_to=str(past))["rows"][0]["present"] == 1
+    assert wf.get("/workforce/reports/workforce", wf.mgr, date_from=str(past), date_to=str(past))["overtime_marketplace"]["filled"] == 1
+
 
 def test_regular_hours_are_not_overtime(wf: Factory):
     past = today() - timedelta(days=2)

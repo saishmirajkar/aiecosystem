@@ -215,6 +215,17 @@ def test_demo_data_loads_consistently(client: TestClient) -> None:
     total_report = sum(Decimal(r["value"]) for r in val["rows"])
     assert total_report == Decimal(m["total_stock_value"])
     login(client, "staff@demo.example.com", "Demo-Passw0rd!")
+    # Workforce demo: real schedules, vacancies from leave, a filled claim, attendance-based overtime and a payroll batch.
+    mgr = login(client, "shift.manager@demo.example.com", "Demo-Passw0rd!")
+    dash = client.get("/api/v1/workforce/dashboard", headers=mgr).json()
+    assert dash["coverage"] and dash["pending"]["leave"] >= 1 and dash["pending"]["conflicts"] == 1
+    statuses = {o["status"] for o in client.get("/api/v1/overtime/opportunities", headers=mgr, params={"page_size": 50}).json()["items"]}
+    assert {"open", "filled", "expired"} <= statuses
+    hr = login(client, "hr@demo.example.com", "Demo-Passw0rd!")
+    assert client.get("/api/v1/payroll/exports", headers=hr).json()[0]["line_count"] >= 1
+    emp = login(client, "EMP-101", "Demo-Passw0rd!")
+    me = client.get("/api/v1/workforce/me", headers=emp).json()
+    assert me["employee"]["employee_code"] == "EMP-101" and me["upcoming"]
 
 
 def test_reset_token_never_logged_in_production(client: TestClient, installed: dict, caplog, monkeypatch) -> None:

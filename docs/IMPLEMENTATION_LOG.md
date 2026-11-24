@@ -92,3 +92,40 @@ Defects found and fixed during validation: three `use_alter` foreign keys missin
 5. FIFO cost layers behind `valuation_method`.
 6. Streaming (SSE) responses in the Command Center.
 7. Next department: Procurement (full) agent, using the extension path in SYSTEM_ARCHITECTURE §7.
+
+---
+
+## Workforce & Shift Management (foundation module, branch `feature/workforce`, 2026-11-24)
+Design, decisions and data model: `docs/workforce/WORKFORCE_ARCHITECTURE.md`.
+
+**Built**
+- Backend module `app/modules/workforce`:
+  - people, teams, skills
+  - shift templates, rotations, dated shifts with positions, generation and copy-week
+  - leave with balances and approval
+  - vacancy → overtime opportunity
+  - atomic first-come-first-served claim
+  - withdrawals and conflicts, manual assignment with reason
+  - attendance with corrections and CSV import
+  - overtime calculation from attendance, approval, payroll export (CSV/XLSX)
+  - notifications with dedupe and delivery log; email through SMTP when configured; push/WhatsApp report "not connected"
+  - dashboards and reports
+  - Celery jobs: expiry, absence marking, email delivery
+- Migration `0004`, with tables, the `btree_gist` no-overlap constraint and a one-active-assignment-per-position index.
+- Workforce Agent (15 tools, 2 approval-gated actions), registered with the Main Agent, plus `POST /ai/workforce/chat`.
+- Frontend:
+  - mobile-first employee app (bottom tabs, one-tap claim)
+  - manager screens: dashboard, calendar (day/week/month), leave, overtime board with live claims log, attendance, overtime records
+  - HR screens: employees, setup, payroll, reports
+- Demo: 17 employees in 4 teams, staggered rotations, a week of attendance, leave in every state, open/filled/expired opportunities, an open conflict, a payroll batch.
+
+**Foundation changes made here (go to `main` with the module)**
+- Sign-in accepts an employee code.
+- `/auth/me` returns `employee_id`.
+- Push/WhatsApp preference flags and a notification dedupe key.
+- SMTP settings.
+- Seeding grants a newly added module's permissions to existing system roles.
+- Idempotent replay of business-decided status codes.
+- `time` values in audit JSON.
+- Stricter rule for adding a secondary agent.
+- Frontend login keeps the session query bound (fixes a race after sign-in).

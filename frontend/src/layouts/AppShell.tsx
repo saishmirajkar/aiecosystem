@@ -3,6 +3,7 @@ import {
   ArrowLeftRight, Bell, Boxes, Building2, ChartNoAxesCombined, ClipboardCheck, ClipboardList, FileBarChart, Gauge, KeyRound,
   LayoutGrid, LogOut, Menu, Moon, PackageCheck, PackageSearch, Ruler, ScrollText, Settings2, ShieldCheck, Sparkles, Sun,
   TriangleAlert, Truck, UserRound, Users, Warehouse, Waypoints, X, Scale, ShoppingCart, Network,
+  CalendarDays, CalendarClock, Plane, Zap, Timer, Hourglass, IdCard, FileSpreadsheet, SlidersHorizontal, LineChart, Sun as SunIcon,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -16,7 +17,7 @@ import { relative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Notification, Page } from "@/types/api";
 
-interface NavItem { to: string; label: string; icon: ReactNode; perm?: string }
+interface NavItem { to: string; label: string; icon: ReactNode; perm?: string; employeeOnly?: boolean }
 interface NavGroup { label?: string; items: NavItem[] }
 
 const NAV: NavGroup[] = [
@@ -40,6 +41,24 @@ const NAV: NavGroup[] = [
     { to: "/purchasing/requisitions", label: "Purchase Requisitions", icon: <ClipboardList />, perm: "purchasing.view" },
     { to: "/purchasing/orders", label: "Purchase Orders", icon: <ShoppingCart />, perm: "purchasing.view" },
     { to: "/approvals", label: "Approvals", icon: <ClipboardCheck />, perm: "approvals.view" },
+  ] },
+  { label: "My work", items: [
+    { to: "/me", label: "My day", icon: <SunIcon />, perm: "workforce.self", employeeOnly: true },
+    { to: "/me/shifts", label: "My shifts", icon: <CalendarDays />, perm: "workforce.self", employeeOnly: true },
+    { to: "/me/overtime", label: "Overtime to claim", icon: <Zap />, perm: "workforce.self", employeeOnly: true },
+    { to: "/me/leave", label: "My leave", icon: <Plane />, perm: "workforce.self", employeeOnly: true },
+  ] },
+  { label: "Workforce", items: [
+    { to: "/workforce", label: "Workforce overview", icon: <Users />, perm: "workforce.view" },
+    { to: "/workforce/schedule", label: "Shift schedule", icon: <CalendarClock />, perm: "workforce.view" },
+    { to: "/workforce/leave", label: "Leave", icon: <Plane />, perm: "workforce.view" },
+    { to: "/workforce/overtime", label: "Overtime board", icon: <Zap />, perm: "workforce.view" },
+    { to: "/workforce/attendance", label: "Attendance", icon: <Timer />, perm: "workforce.view" },
+    { to: "/workforce/overtime-records", label: "Overtime records", icon: <Hourglass />, perm: "workforce.view" },
+    { to: "/workforce/employees", label: "Employees", icon: <IdCard />, perm: "workforce.view" },
+    { to: "/workforce/payroll", label: "Payroll export", icon: <FileSpreadsheet />, perm: "workforce.payroll" },
+    { to: "/workforce/reports", label: "Workforce reports", icon: <LineChart />, perm: "workforce.view" },
+    { to: "/workforce/setup", label: "Workforce setup", icon: <SlidersHorizontal />, perm: "workforce.config" },
   ] },
   { label: "ERP Settings", items: [
     { to: "/settings/company", label: "Company", icon: <Building2 />, perm: "company.view" },
@@ -77,7 +96,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <Brand name={user?.company?.name} />
       <nav className="flex-1 space-y-5 overflow-y-auto pb-4" aria-label="Main navigation">
         {NAV.map((g, gi) => {
-          const items = g.items.filter((i) => !i.perm || can(i.perm));
+          const items = g.items.filter((i) => (!i.perm || can(i.perm)) && (!i.employeeOnly || !!user?.employee_id));
           if (!items.length) return null;
           return (
             <div key={gi}>
@@ -85,7 +104,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               <ul className="space-y-0.5">
                 {items.map((i) => (
                   <li key={i.to}>
-                    <NavLink to={i.to} end={i.to === "/"} onClick={onNavigate}
+                    <NavLink to={i.to} end={i.to === "/" || i.to === "/me" || i.to === "/workforce"} onClick={onNavigate}
                       className={({ isActive }) => cn("flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13.5px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg [&_svg]:size-4 [&_svg]:text-muted",
                         isActive && "bg-surface-2 font-medium text-fg [&_svg]:text-accent")}>
                       {i.icon}{i.label}
@@ -98,7 +117,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
       <div className="rounded-lg border border-line bg-surface-2/60 px-3 py-2.5 text-[11px] leading-relaxed text-muted">
-        <span className="font-medium text-fg-2">Your entire business. Within reach.</span><br />Inventory connected · more departments coming
+        <span className="font-medium text-fg-2">Your entire business. Within reach.</span><br />Inventory and workforce connected · more departments coming
       </div>
     </div>
   );

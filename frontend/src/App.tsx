@@ -20,6 +20,10 @@ import { RequisitionDetailPage, RequisitionsPage } from "@/features/purchasing/R
 import { SuppliersPage } from "@/features/purchasing/SuppliersPage";
 import { AuditLogPage, CompanyPage, DepartmentsPage, ProfilePage, RolesPage, SystemSettingsPage, UnitsPage, UsersPage } from "@/features/settings/SettingsPages";
 import { WarehouseDetailPage, WarehousesPage } from "@/features/warehouses/WarehousesPage";
+import { AttendancePage, OvertimeRecordsPage } from "@/features/workforce/AttendancePages";
+import { EmployeeShell, MarketplacePage, MeHomePage, MeOpportunityPage, MeRecordPage, MyLeavePage, MyShiftsPage } from "@/features/workforce/EmployeePages";
+import { EmployeeDetailPage, EmployeesPage, PayrollPage, WorkforceReportsPage, WorkforceSetupPage } from "@/features/workforce/HrPages";
+import { LeaveApprovalsPage, OpportunityDetailPage, OvertimeBoardPage, SchedulePage, WorkforceDashboardPage } from "@/features/workforce/ManagerPages";
 import { useAuth } from "@/hooks/auth";
 import { AppShell } from "@/layouts/AppShell";
 import { api } from "@/lib/api";
@@ -35,7 +39,7 @@ function Guard({ perm, children }: { perm?: string; children: ReactNode }) {
 }
 
 export function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, can } = useAuth();
   const location = useLocation();
   const setup = useQuery({ queryKey: ["setup-status"], queryFn: () => api.get<{ initialized: boolean; demo_data: boolean }>("/setup/status"), staleTime: 60_000 });
 
@@ -49,11 +53,47 @@ export function App() {
       </Routes>
     );
   }
+  const demo = !!setup.data?.demo_data;
+  const meRoutes = (wrap: (el: ReactNode) => ReactNode) => <>
+    <Route path="me" element={wrap(<MeHomePage />)} />
+    <Route path="me/shifts" element={wrap(<MyShiftsPage />)} />
+    <Route path="me/overtime" element={wrap(<MarketplacePage />)} />
+    <Route path="me/overtime/:id" element={wrap(<MeOpportunityPage />)} />
+    <Route path="me/leave" element={wrap(<MyLeavePage />)} />
+    <Route path="me/record" element={wrap(<MeRecordPage />)} />
+  </>;
+  // People whose only access is self-service get the mobile-first employee app.
+  if (can("workforce.self") && !can("workforce.view") && !can("inventory.view")) {
+    return (
+      <Routes>
+        <Route element={<EmployeeShell demo={demo} />}>
+          {meRoutes((el) => el)}
+          <Route path="me/account" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/me" replace />} />
+        </Route>
+      </Routes>
+    );
+  }
+  const narrow = (el: ReactNode) => <Guard perm="workforce.self"><div className="mx-auto max-w-2xl">{el}</div></Guard>;
   return (
     <Routes>
       <Route path="/login" element={<Navigate to="/" replace />} />
-      <Route element={<AppShell demo={!!setup.data?.demo_data} />}>
-        <Route index element={<Guard perm="inventory.view"><DashboardPage /></Guard>} />
+      <Route element={<AppShell demo={demo} />}>
+        <Route index element={!can("inventory.view") && can("workforce.view") ? <Navigate to="/workforce" replace /> : <Guard perm="inventory.view"><DashboardPage /></Guard>} />
+        {meRoutes(narrow)}
+        <Route path="me/account" element={<Navigate to="/profile" replace />} />
+        <Route path="workforce" element={<Guard perm="workforce.view"><WorkforceDashboardPage /></Guard>} />
+        <Route path="workforce/schedule" element={<Guard perm="workforce.view"><SchedulePage /></Guard>} />
+        <Route path="workforce/leave" element={<Guard perm="workforce.view"><LeaveApprovalsPage /></Guard>} />
+        <Route path="workforce/overtime" element={<Guard perm="workforce.view"><OvertimeBoardPage /></Guard>} />
+        <Route path="workforce/overtime/:id" element={<Guard perm="workforce.view"><OpportunityDetailPage /></Guard>} />
+        <Route path="workforce/attendance" element={<Guard perm="workforce.view"><AttendancePage /></Guard>} />
+        <Route path="workforce/overtime-records" element={<Guard perm="workforce.view"><OvertimeRecordsPage /></Guard>} />
+        <Route path="workforce/employees" element={<Guard perm="workforce.view"><EmployeesPage /></Guard>} />
+        <Route path="workforce/employees/:id" element={<Guard perm="workforce.view"><EmployeeDetailPage /></Guard>} />
+        <Route path="workforce/payroll" element={<Guard perm="workforce.payroll"><PayrollPage /></Guard>} />
+        <Route path="workforce/reports" element={<Guard perm="workforce.view"><WorkforceReportsPage /></Guard>} />
+        <Route path="workforce/setup" element={<Guard perm="workforce.view"><WorkforceSetupPage /></Guard>} />
         <Route path="ai" element={<Guard perm="ai.access"><CommandCenterPage /></Guard>} />
         <Route path="ai/:conversationId" element={<Guard perm="ai.access"><CommandCenterPage /></Guard>} />
         <Route path="inventory/products" element={<Guard perm="inventory.view"><ProductsPage /></Guard>} />

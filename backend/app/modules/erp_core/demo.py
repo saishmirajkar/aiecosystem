@@ -247,5 +247,8 @@ def load_demo_data(db: Session, admin: User) -> None:
     inv_svc.create_reservation(db, actor, inv.ReservationIn(product_id=products["BRG-6205"].id, warehouse_id=whs["WH-MAIN"].id,
                                                             quantity=Decimal(24), reference_type="work_order", reference_number="WO-2611"))
 
+    from app.modules.workforce.demo import load_workforce_demo  # workforce module: people, rotas, leave, overtime
+    load_workforce_demo(db, admin, DEMO_PASSWORD)
+
     db.add(SystemSetting(key="system.demo_data", value=True, description="Installation contains synthetic demo data"))
     db.flush()

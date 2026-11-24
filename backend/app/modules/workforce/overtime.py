@@ -14,7 +14,7 @@ from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.common import audit, next_number
@@ -26,7 +26,7 @@ from app.models import (
     PayrollExportBatch, RoundingMode,
 )
 from app.modules.workforce import schemas as s
-from app.modules.workforce.core import Scope, company_tz, employee_brief, hours, overtime_policy, require_me, week_start
+from app.modules.workforce.core import Scope, company_tz, employee_brief, hours, overtime_policy, week_start
 
 NUMERIC = ("scheduled_minutes", "worked_minutes", "regular_minutes", "ot_daily_minutes", "ot_weekly_minutes",
            "ot_weekly_off_minutes", "ot_holiday_minutes", "night_minutes", "payable_minutes", "night_allowance", "amount")
@@ -282,6 +282,7 @@ def approve(db: Session, actor: Actor, scope: Scope, calc_id: uuid.UUID, data: s
     c.status, c.approved_minutes, c.decided_by, c.decided_at, c.decision_note = CalcStatus.APPROVED, minutes_ok, actor.user_id, utcnow(), data.note
     audit(db, actor, "workforce.overtime.approve", "overtime_calculation", c.id,
           {"approved_minutes": minutes_ok, "payable_minutes": c.payable_minutes, "note": data.note})
+    db.flush()  # autoflush is off: make the decision visible to later queries in the same transaction
     return c
 
 
@@ -292,6 +293,7 @@ def reject(db: Session, actor: Actor, scope: Scope, calc_id: uuid.UUID, note: st
         raise InvalidState(f"This record is {c.status.value}")
     c.status, c.approved_minutes, c.decided_by, c.decided_at, c.decision_note = CalcStatus.REJECTED, 0, actor.user_id, utcnow(), note
     audit(db, actor, "workforce.overtime.reject", "overtime_calculation", c.id, {"note": note})
+    db.flush()
     return c
 
 
@@ -317,6 +319,7 @@ def batch_out(db: Session, b: PayrollExportBatch) -> dict[str, Any]:
 
 def create_export(db: Session, actor: Actor, scope: Scope, data: s.ExportIn) -> PayrollExportBatch:
     actor.require("workforce.payroll")
+    db.flush()
     stmt = scope.employee_filter(select(OvertimeCalculation.id).join(Employee, Employee.id == OvertimeCalculation.employee_id).where(
         OvertimeCalculation.status == CalcStatus.APPROVED, OvertimeCalculation.export_batch_id.is_(None),
         OvertimeCalculation.work_date >= data.period_start, OvertimeCalculation.work_date <= data.period_end))

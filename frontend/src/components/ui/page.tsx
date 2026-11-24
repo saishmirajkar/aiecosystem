@@ -98,6 +98,10 @@ const STATUS_TONES: Record<string, Tone> = {
   closed: "neutral", cancelled: "neutral", rejected: "bad", failed: "bad", expired: "neutral", active: "ok", released: "neutral",
   ok: "ok", low: "warn", critical: "bad", out: "bad", overstock: "info", unrestricted: "ok", damaged: "bad", returned: "warn",
   critical_sev: "bad", warning: "warn", info: "info", in_stock: "ok", issued: "neutral",
+  // workforce
+  published: "info", open: "accent", partially_filled: "accent", filled: "ok", assigned: "ok", on_leave: "warn", won: "ok", lost: "neutral",
+  present: "ok", absent: "bad", late: "warn", half_day: "warn", holiday: "info", weekly_off: "neutral", calculated: "warn", exported: "neutral",
+  working: "accent", not_checked_in: "bad", scheduled: "neutral", resolved: "ok", suspended: "warn", inactive: "neutral", terminated: "neutral",
 };
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
   const text = status === "out" ? "Out of stock" : fmtLabel(status);

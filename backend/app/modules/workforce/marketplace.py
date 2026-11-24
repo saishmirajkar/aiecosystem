@@ -21,12 +21,12 @@ from app.core.common import audit, next_number
 from app.core.database import utcnow
 from app.core.deps import Actor
 from app.core.errors import (
-    BusinessRuleViolation, Conflict, InvalidState, NotFound, PermissionDenied, ValidationFailed,
+    BusinessRuleViolation, Conflict, InvalidState, NotFound, ValidationFailed,
 )
 from app.models import (
     AssignmentSource, AssignmentStatus, ClaimOutcome, ConflictKind, ConflictStatus, Employee, EmployeeStatus, HalfDay,
     OpportunityPosition, OpportunityRecipient, OpportunitySource, OpportunityStatus, OvertimeClaim, OvertimeOpportunity,
-    PositionKind, Shift, ShiftAssignment, ShiftPosition, ShiftStatus, Team, WorkforceConflict, team_members,
+    PositionKind, Shift, ShiftAssignment, ShiftPosition, ShiftStatus, WorkforceConflict, team_members,
 )
 from app.modules.workforce import schemas as s
 from app.modules.workforce.core import (
@@ -95,6 +95,8 @@ def refresh(db: Session, opp: OvertimeOpportunity, now: datetime | None = None) 
                "Extend the deadline, notify again, or assign someone manually.",
                {"opportunity_id": str(opp.id), "link": f"/workforce/overtime/{opp.id}"}, dedupe_key=f"otexpired:{opp.id}:{opp.round}")
         changed = True
+    if changed:
+        db.flush()
     return changed
 
 
@@ -460,6 +462,7 @@ def cancel(db: Session, actor: Actor, scope: Scope, opp_id: uuid.UUID, reason: s
     opp.status, opp.cancelled_at, opp.cancel_reason = OpportunityStatus.CANCELLED, utcnow(), reason
     _tell_recipients(db, opp, "overtime_cancelled", f"No longer available: {opp.title}", "This overtime opportunity is no longer available.")
     audit(db, actor, "workforce.opportunity.cancel", "overtime_opportunity", opp.id, {"reason": reason})
+    db.flush()
     return opp
 
 

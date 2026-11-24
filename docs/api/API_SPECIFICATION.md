@@ -116,6 +116,35 @@ This document defines the conventions every endpoint follows and the endpoint ca
 | GET | `/approvals` | `approvals.view` |
 | POST | `/approvals/{id}/approve` · `/approvals/{id}/reject` | `approvals.decide` + action permission |
 
+### Workforce & shift management
+Full design, rules and data model: [`docs/workforce/WORKFORCE_ARCHITECTURE.md`](../workforce/WORKFORCE_ARCHITECTURE.md).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/workforce/me` · `/workforce/me/schedule` | `workforce.self` | employee home: today, upcoming, open overtime, balances, month overtime |
+| GET · POST · PATCH | `/employees` · `/employees/{id}` | view in scope · `workforce.employees.manage` | rate visible with `workforce.payroll` only |
+| POST | `/employees/{id}/portal-access` · `/employees/{id}/link-user` | `workforce.employees.manage` | login by email or employee code |
+| GET · POST · PATCH | `/workforce/{locations,designations,skills,teams,holidays}` | read any · write `workforce.config` | |
+| GET · POST · PATCH/PUT | `/shift-templates` · `/shift-patterns` | read · `workforce.config` | overnight templates supported |
+| GET · PUT | `/workforce/policies` · `/overtime/policies` | read · `workforce.config` | company default + department overrides |
+| GET | `/shifts` · `/shifts/calendar` · `/shifts/{id}` · `/shifts/{id}/candidates` | view in scope | positions, vacancies, people on leave |
+| POST · PATCH | `/shifts` · `/shifts/{id}` · `/shifts/{id}/cancel` · `/shifts/{id}/assignments` · `/assignments/{id}/release` | `workforce.schedule` | soft rules need `override_rules` + reason |
+| POST | `/shifts/generate` · `/shifts/copy-week` | `workforce.schedule` | never double-books; returns what was skipped |
+| GET · POST | `/leave/types` · `/leave/balances` · `/leave/preview` · `/leave/requests` | self or in scope | |
+| POST | `/leave/requests/{id}/submit` · `/approve` · `/reject` · `/cancel` · `/attachments` | owner / `workforce.leave.approve` | approval creates overtime opportunities; no self-approval |
+| GET | `/overtime/marketplace` | `workforce.self` | eligibility and pay estimate per opportunity |
+| POST | `/overtime/opportunities/{id}/claim` | `workforce.self` | **Idempotency-Key**; `201` won · `409 opportunity_filled` "This overtime opportunity has already been claimed by another employee." · `409 <rule>` not eligible |
+| GET · POST | `/overtime/opportunities` · `/{id}` · `/{id}/candidates` · `/vacancies` | `workforce.view` / `workforce.overtime.manage` | claims log with server timestamps |
+| POST | `/overtime/opportunities/{id}/publish` · `/extend` · `/renotify` · `/cancel` · `/assign` | `workforce.overtime.manage` | manual assign requires a reason |
+| POST | `/assignments/{id}/withdraw` | `workforce.self` | inside the cut-off becomes a manager decision |
+| GET · POST | `/workforce/conflicts` · `/{id}/resolve` | `workforce.view` / `workforce.overtime.manage` | |
+| GET · POST | `/attendance` · `/attendance/day-sheet` · `/attendance/check-in` · `/check-out` · `/record` · `/import` · `/corrections` | self / `workforce.attendance.manage` | check-in/out take **Idempotency-Key**; no location data |
+| GET · POST | `/overtime/calculations` · `/recalculate` · `/{id}/approve` · `/{id}/reject` · `/bulk-approve` | self / `workforce.overtime.approve` | |
+| GET · POST | `/payroll/exports` · `/payroll/exports/{id}/download?format=csv\|xlsx` | `workforce.payroll` | create takes **Idempotency-Key** |
+| GET | `/workforce/dashboard` · `/workforce/reports/{workforce,overtime,attendance}` | `workforce.view` | amounts only with `workforce.payroll` |
+| GET | `/workforce/notification-channels` | any signed-in user | in-app / email / push / WhatsApp status |
+| POST | `/ai/workforce/chat` | `ai.access` + `workforce.self` | talks to the Workforce Agent directly |
+
 ## Report identifiers
 `current_stock`, `warehouse_inventory`, `stock_movements`, `stock_in`, `stock_out`, `low_stock`,
 `overstock`, `inventory_valuation`, `stock_adjustments`, `damaged_stock`, `goods_receipts`,

@@ -131,6 +131,7 @@ class UserOut(Schema):
 class MeOut(UserOut):
     permissions: list[str]
     company: CompanyOut | None
+    employee_id: uuid.UUID | None = None  # set when the login is linked to a workforce employee record
 
 
 class LoginOut(Schema):

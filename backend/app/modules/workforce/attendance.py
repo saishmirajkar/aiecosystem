@@ -25,7 +25,7 @@ from app.models import (
 )
 from app.modules.workforce import schemas as s
 from app.modules.workforce.core import (
-    Scope, at, company_tz, day_start, employee_brief, hm, minutes, require_me, users_managing, workforce_policy,
+    Scope, at, company_tz, employee_brief, hm, minutes, require_me, users_managing, workforce_policy,
 )
 from app.modules.workforce.notify import notify
 

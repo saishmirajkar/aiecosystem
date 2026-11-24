@@ -223,7 +223,7 @@ Conventions as in the ERP: JSON, decimals as strings, pagination `page`/`page_si
 | Overtime | `GET /overtime/opportunities`, `GET /overtime/opportunities/{id}`, `POST …/claim`, `…/publish`, `…/extend`, `…/renotify`, `…/cancel`, `…/assign`, `POST /overtime/opportunities` (manual), `GET /overtime/my-assignments`, `POST /assignments/{id}/withdraw`, `GET /workforce/conflicts`, `POST /workforce/conflicts/{id}/resolve` |
 | Attendance | `GET /attendance`, `GET /attendance/day-sheet`, `POST /attendance/check-in`, `…/check-out`, `POST /attendance/record`, `POST /attendance/import`, `GET/POST /attendance/corrections`, `POST /attendance/corrections/{id}/approve|reject` |
 | Overtime pay | `GET /overtime/calculations`, `POST /overtime/calculations/recalculate`, `POST /overtime/calculations/{id}/approve|reject`, `GET/POST /payroll/exports`, `GET /payroll/exports/{id}/download?format=csv|xlsx` |
-| Dashboards & reports | `GET /workforce/dashboard`, `GET /reports/workforce`, `GET /reports/overtime`, `GET /reports/attendance` |
+| Dashboards & reports | `GET /workforce/dashboard`, `GET /workforce/reports/workforce`, `/workforce/reports/overtime`, `/workforce/reports/attendance` (the ERP already uses `/reports/{id}` for inventory) |
 | AI | `POST /ai/workforce/chat` (and the Main Agent routes workforce questions automatically) |
 
 ## 10. Permissions
