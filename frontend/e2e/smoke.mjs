@@ -86,7 +86,7 @@ async function run(contextOpts, label, full) {
     await page.goto(`${BASE}/inventory/stock`);
     await page.getByRole("heading", { level: 1 }).filter({ hasText: "Stock overview" }).waitFor();
     await page.getByRole("group", { name: "Switch module" }).getByRole("button", { name: "Workforce" }).click();
-    await page.waitForURL(`${BASE}/workforce`);
+    await page.waitForURL(`${BASE}/workforce/setup`);  // the last Workforce page this session visited
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     check(await nav.getByRole("link", { name: "Shift schedule" }).count() === 1 && await nav.getByRole("link", { name: "Products" }).count() === 0,
       `[${label}] Workforce module shows only workforce menus`);
