@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.common import jsonable
 from app.core.database import utcnow
 from app.core.deps import Actor
-from app.core.errors import NotFound
+from app.core.errors import NotFound, PermissionDenied
 from app.models import AgentExecutionLog, Conversation, Message
 from app.orchestrator import response_builder
 from app.orchestrator.agent_registry import AgentRegistry
@@ -20,9 +20,10 @@ from app.orchestrator.context_manager import load_history
 from app.orchestrator.dispatcher import Dispatcher
 from app.orchestrator.intent_router import IntentRouter
 
-BRIEFING_SUFFIX = ("The user asked for a general briefing. Only the Inventory department (with the purchasing foundation) is "
-                   "connected. Use get_inventory_alerts and get_pending_goods_receipts (overdue) and summarise what needs "
-                   "attention, highest severity first. State that other departments are not connected yet.")
+BRIEFING_SUFFIX = ("The user asked for a general briefing. Summarise what needs attention in your own department, highest "
+                   "severity first (inventory: alerts and overdue deliveries; workforce: staffing gaps, absences, vacant shifts and "
+                   "pending leave). Other agents cover their own departments; finance, quality, maintenance and sales are not "
+                   "connected yet.")
 MAX_AGENTS_PER_REQUEST = 3
 
 
@@ -36,8 +37,16 @@ class MainAgent:
             raise NotFound("Conversation not found")  # never reveal other users' conversations
         return conv
 
-    def handle(self, db: Session, actor: Actor, message: str, conversation_id: uuid.UUID | None = None) -> tuple[Conversation, Message]:
+    def handle(self, db: Session, actor: Actor, message: str, conversation_id: uuid.UUID | None = None,
+               agent_id: str | None = None) -> tuple[Conversation, Message]:
+        """Route a message to department agents. `agent_id` addresses one agent directly (e.g. /ai/workforce/chat)."""
         actor.require("ai.access")
+        if agent_id is not None:
+            target = self.registry.get(agent_id)
+            if target is None or target.status != "active":
+                raise NotFound(f"Agent '{agent_id}' is not available")
+            if not target.can_be_used_by(actor):
+                raise PermissionDenied(f"You don't have access to the {target.name}")
         if conversation_id:
             conv = self.get_conversation(db, actor, conversation_id)
         else:
@@ -51,7 +60,9 @@ class MainAgent:
         db.commit()
 
         allowed = {a.agent_id for a in self.registry.active() if a.can_be_used_by(actor)}
-        decision = self.router.route(message, allowed_agent_ids=allowed)
+        decision = self.router.route(message, allowed_agent_ids={agent_id} if agent_id else allowed)
+        if agent_id and not decision.agent_ids:
+            decision.agent_ids, decision.reason = [agent_id], f"addressed directly to {agent_id}"
         db.add(AgentExecutionLog(conversation_id=conv.id, user_id=actor.user_id, agent_id="main", engine="router",
                                  event="routing", status="success",
                                  output_summary={"agents": decision.agent_ids, "unconnected": decision.unconnected,

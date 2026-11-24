@@ -18,8 +18,7 @@ UNCONNECTED_DEPARTMENTS: dict[str, tuple[str, list[str]]] = {
     "MAINT": ("Maintenance", ["maintenance", "breakdown", "downtime", "preventive", "machine health", "mtbf", "mttr"]),
     "FIN": ("Finance and Accounts", ["invoice", "payable", "receivable", "payment", "profit", "revenue", "cash flow",
                                      "balance sheet", "gst", "tax return", "budget", "expense", "p&l"]),
-    "HR": ("HR and Workforce", ["payroll", "salary", "salaries", "attendance", "leave", "employee", "hiring", "recruit",
-                                "headcount", "overtime", "shift roster"]),
+    "HR": ("HR recruitment and salary processing", ["salary", "salaries", "hiring", "recruit", "appraisal", "gratuity"]),
     "LOG": ("Logistics and Dispatch", ["shipment", "dispatch", "freight", "vehicle", "e-way bill", "eway bill", "transporter",
                                        "outbound delivery", "route plan"]),
     "CRM": ("CRM and Sales", ["customer", "lead", "leads", "sales order", "quotation", "deal", "pipeline", "opportunit", "crm"]),
@@ -55,7 +54,11 @@ class IntentRouter:
             decision.agent_ids = [a for a in scores]  # every connected agent contributes to a briefing
             decision.reason = "briefing across connected departments"
             return decision
-        matched = [a for a, s in sorted(scores.items(), key=lambda kv: -kv[1]) if s > 0]
+        top = max(scores.values(), default=0)
+        # The best match always answers. Another agent joins when it scores at least half of the best and has at least
+        # two keyword hits, so a combined question reaches both while one generic word ("today") does not.
+        matched = [a for a, s in sorted(scores.items(), key=lambda kv: -kv[1])
+                   if s > 0 and (s == top or (s * 2 >= top and s >= 2))]
         if matched:
             decision.agent_ids = matched
             decision.reason = "keyword match: " + ", ".join(matched)

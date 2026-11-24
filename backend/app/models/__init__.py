@@ -20,5 +20,15 @@ from app.models.purchasing import (
 from app.models.system import (
     Attachment, AuditLog, DocumentSequence, IdempotencyRecord, Notification, NotificationPreference, SystemSetting,
 )
+from app.models.workforce import (
+    AssignmentSource, AssignmentStatus, AttendanceCorrection, AttendanceRecord, AttendanceSource, AttendanceStatus,
+    CalcStatus, ClaimOutcome, ConflictKind, ConflictStatus, CorrectionStatus, DayRule, DeliveryStatus, Designation,
+    Employee, EmployeeSkill, EmployeeStatus, EmploymentType, HalfDay, Holiday, LeaveApproval, LeaveBalance, LeaveRequest,
+    LeaveStatus, LeaveType, NotificationDelivery, OpportunityPosition, OpportunityRecipient, OpportunitySource,
+    OpportunityStatus, OvertimeCalculation, OvertimeClaim, OvertimeOpportunity, OvertimePolicy, PayrollExportBatch,
+    PositionKind, RoundingMode, Shift, ShiftAssignment, ShiftPattern, ShiftPatternDay, ShiftPosition, ShiftStatus,
+    ShiftTemplate, Skill, SkillKind, Team, WorkforceConflict, WorkforcePolicy, WorkLocation, leave_request_shifts,
+    shift_skills, shift_template_skills, team_members,
+)
 
 __all__ = [name for name in dir() if not name.startswith("_")]

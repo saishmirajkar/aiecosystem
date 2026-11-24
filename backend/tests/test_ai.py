@@ -44,8 +44,17 @@ def test_intent_router():
     r = IntentRouter(get_registry())
     assert r.route("How much inventory do we have?", allowed_agent_ids={"inventory"}).agent_ids == ["inventory"]
     assert r.route("Which items need reordering?", allowed_agent_ids={"inventory"}).agent_ids == ["inventory"]
-    d = r.route("What is this month's payroll total?", allowed_agent_ids={"inventory"})
-    assert d.agent_ids == [] and d.unconnected == ["HR and Workforce"]
+    d = r.route("What is the salary total for our recruits?", allowed_agent_ids={"inventory", "workforce"})
+    assert d.agent_ids == [] and d.unconnected == ["HR recruitment and salary processing"]
+    both = {"inventory", "workforce"}
+    assert r.route("Who is absent today?", allowed_agent_ids=both).agent_ids == ["workforce"]
+    assert r.route("Which shifts are vacant tomorrow?", allowed_agent_ids=both).agent_ids == ["workforce"]
+    assert r.route("How much overtime was paid this month?", allowed_agent_ids=both).agent_ids == ["workforce"]
+    assert r.route("How many people are available for tomorrow's morning shift?", allowed_agent_ids=both).agent_ids == ["workforce"]
+    assert r.route("How much inventory do we have?", allowed_agent_ids=both).agent_ids == ["inventory"]
+    assert r.route("Which items are low on stock and which shifts are vacant tomorrow?", allowed_agent_ids=both).agent_ids == [
+        "workforce", "inventory"] or set(r.route("Which items are low on stock and which shifts are vacant tomorrow?",
+                                                 allowed_agent_ids=both).agent_ids) == both
     d = r.route("What needs my attention today?", allowed_agent_ids={"inventory"})
     assert d.briefing and d.agent_ids == ["inventory"]
     d = r.route("Show low stock and unpaid invoices", allowed_agent_ids={"inventory"})
@@ -55,8 +64,8 @@ def test_intent_router():
 
 def test_agents_endpoint_lists_only_real_agents(client, plant):
     body = client.get("/api/v1/ai/agents", headers=plant["h"]).json()
-    assert [a["id"] for a in body["agents"]] == ["inventory"]
-    assert len(body["agents"][0]["tools"]) == 15 and body["engine"] == "offline"
+    assert [a["id"] for a in body["agents"]] == ["inventory", "workforce"]
+    assert len(body["agents"][0]["tools"]) == 15 and len(body["agents"][1]["tools"]) == 15 and body["engine"] == "offline"
     assert "CRM and Sales" in body["not_connected"]
 
 
@@ -99,7 +108,7 @@ def test_unknown_product_is_not_invented(client, plant):
 
 
 def test_unconnected_department_is_reported_honestly(client, plant):
-    msg = chat(client, plant["h"], "What is the payroll cost for October?")["message"]
+    msg = chat(client, plant["h"], "What is the salary cost for October?")["message"]
     assert "not connected" in msg["content"] and msg["payload"]["routing"]["agents"] == []
 
 

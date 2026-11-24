@@ -89,9 +89,20 @@ def initialize(db: Session, data: s.SetupIn) -> User:
 
 
 # ------------------------------------------------------------------ authentication
+def _find_login_user(db: Session, identifier: str) -> User | None:
+    """Sign-in accepts an email address or, for staff without email, an employee code linked to a login."""
+    ident = identifier.strip()
+    if "@" in ident:
+        return db.execute(select(User).where(func.lower(User.email) == ident.lower())).scalar_one_or_none()
+    from app.models import Employee
+    uid = db.execute(select(Employee.user_id).where(func.lower(Employee.employee_code) == ident.lower(),
+                                                    Employee.user_id.is_not(None))).scalar_one_or_none()
+    return db.get(User, uid) if uid else None
+
+
 def login(db: Session, email: str, password: str, ip: str | None, user_agent: str | None) -> tuple[User, str, UserSession]:
     settings = get_settings()
-    user = db.execute(select(User).where(func.lower(User.email) == email.lower())).scalar_one_or_none()
+    user = _find_login_user(db, email)
     now = utcnow()
     if user is None:
         verify_password(DUMMY_HASH, password)  # equalise timing

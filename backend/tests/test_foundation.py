@@ -180,7 +180,7 @@ def test_notification_preferences(client: TestClient, admin_headers: dict) -> No
                    json=[{"alert_type": "low_stock", "in_app": False, "email": True}])
     assert r.status_code == 200
     pref = next(p for p in r.json() if p["alert_type"] == "low_stock")
-    assert pref == {"alert_type": "low_stock", "in_app": False, "email": True}
+    assert pref == {"alert_type": "low_stock", "in_app": False, "email": True, "push": False, "whatsapp": False}
 
 
 def test_upload_validation(client: TestClient, admin_headers: dict) -> None:

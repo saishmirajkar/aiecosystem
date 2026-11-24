@@ -6,6 +6,7 @@ from app.modules.inventory.reports_router import router as reports_router
 from app.modules.inventory.router import router as inventory_router
 from app.modules.master_data.router import router as master_router
 from app.modules.purchasing.router import router as purchasing_router
+from app.modules.workforce.router import router as workforce_router
 from app.orchestrator.router import router as ai_router
 
 api_router = APIRouter()
@@ -14,4 +15,5 @@ api_router.include_router(master_router)
 api_router.include_router(inventory_router)
 api_router.include_router(purchasing_router)
 api_router.include_router(reports_router)
+api_router.include_router(workforce_router)
 api_router.include_router(ai_router)

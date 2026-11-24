@@ -64,6 +64,8 @@ def run_idempotent(db: Session, actor: Actor, request: Request, payload: Any,
                             headers={"Idempotent-Replay": "true"})
 
     result = fn()
+    if isinstance(result, tuple):  # (body, status): an outcome whose status is decided by the business logic
+        result, status_code = result
     body = jsonable(result.model_dump(mode="json") if hasattr(result, "model_dump") else result)
     record.response_status = status_code
     record.response_body = body

@@ -64,3 +64,31 @@ def expire_approvals() -> int:
         n = approval_manager.expire_stale(db)
         db.commit()
     return n
+
+
+@celery_app.task(name="app.workers.tasks.workforce_tick")
+def workforce_tick() -> dict:
+    """Open scheduled overtime opportunities and expire past-deadline ones (managers are notified)."""
+    from app.modules.workforce.marketplace import tick
+    with SessionLocal() as db:
+        stats = tick(db)
+        db.commit()
+    return stats
+
+
+@celery_app.task(name="app.workers.tasks.workforce_attendance_close")
+def workforce_attendance_close() -> dict:
+    from app.modules.workforce.attendance import close_attendance
+    with SessionLocal() as db:
+        stats = close_attendance(db)
+        db.commit()
+    return stats
+
+
+@celery_app.task(name="app.workers.tasks.deliver_notifications")
+def deliver_notifications() -> dict:
+    from app.modules.workforce.notify import deliver_pending
+    with SessionLocal() as db:
+        stats = deliver_pending(db)
+        db.commit()
+    return stats

@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -46,11 +46,14 @@ class NotificationPreference(Base):
     alert_type: Mapped[str] = mapped_column(String(50), primary_key=True)
     in_app: Mapped[bool] = mapped_column(Boolean, default=True)
     email: Mapped[bool] = mapped_column(Boolean, default=False)
+    push: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    whatsapp: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
 
 class Notification(UUIDPk, Base):
     __tablename__ = "notifications"
-    __table_args__ = (Index("ix_notifications_user_created", "user_id", "created_at"),)
+    __table_args__ = (Index("ix_notifications_user_created", "user_id", "created_at"),
+                      Index("uq_notifications_dedupe_key", "dedupe_key", unique=True, postgresql_where=text("dedupe_key IS NOT NULL")))
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     type: Mapped[str] = mapped_column(String(50))
@@ -59,6 +62,7 @@ class Notification(UUIDPk, Base):
     data: Mapped[dict | None] = mapped_column(JSONB)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    dedupe_key: Mapped[str | None] = mapped_column(String(200))
 
 
 class Attachment(UUIDPk, Base):
