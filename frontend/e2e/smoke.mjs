@@ -82,6 +82,20 @@ async function run(contextOpts, label, full) {
     check(true, `[${label}] approval executed from chat`);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/${label}_ai_executed.png` });
 
+    // Module switcher: ERP ⇄ Workforce, returning to where you left off
+    await page.goto(`${BASE}/inventory/stock`);
+    await page.getByRole("heading", { level: 1 }).filter({ hasText: "Stock overview" }).waitFor();
+    await page.getByRole("group", { name: "Switch module" }).getByRole("button", { name: "Workforce" }).click();
+    await page.waitForURL(`${BASE}/workforce`);
+    const nav = page.getByRole("navigation", { name: "Main navigation" });
+    check(await nav.getByRole("link", { name: "Shift schedule" }).count() === 1 && await nav.getByRole("link", { name: "Products" }).count() === 0,
+      `[${label}] Workforce module shows only workforce menus`);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/${label}_module_workforce.png` });
+    await page.getByRole("group", { name: "Switch module" }).getByRole("button", { name: "ERP" }).click();
+    await page.waitForURL(`${BASE}/inventory/stock`);
+    check(await nav.getByRole("link", { name: "Products" }).count() === 1 && await nav.getByRole("link", { name: "Shift schedule" }).count() === 0,
+      `[${label}] ERP module returns to the last ERP page`);
+
     // Theme toggle
     await page.getByRole("button", { name: /Switch to (dark|light) theme/ }).click();
     await page.goto(`${BASE}/`);

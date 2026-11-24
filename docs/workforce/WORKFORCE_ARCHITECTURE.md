@@ -245,7 +245,14 @@ Scope is enforced in every service call: employees see only themselves; managers
 their user's departments plus their direct reports; `workforce.all_departments` sees everyone.
 Nobody approves their own leave, attendance correction or overtime.
 
-## 11. Background jobs (Celery beat)
+## 11. Module switcher (UI)
+ERP and Workforce are one application with one login. Users who can open both see an **ERP | Workforce**
+switch in the header; the sidebar then shows only that module's menus. AI Command Center, Approvals and
+Settings are shared and appear in both. Switching returns you to the last page you used in that module
+(remembered in the browser). Users with access to only one module see no switch. Employees with
+self-service access only get the separate mobile-first employee app.
+
+## 12. Background jobs (Celery beat)
 | Job | Every | Does |
 |---|---|---|
 | `workforce.tick` | minute | open published opportunities, expire past-deadline ones (notify manager) |
