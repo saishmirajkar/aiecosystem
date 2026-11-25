@@ -149,7 +149,7 @@ class InventoryAgent(BaseAgent):
                         "requisition", "indent", "supplier", "valuation", "value", "worth", "transfer", "adjust",
                         "reconcil", "count", "batch", "serial", "expiry", "expir", "movement", "issued", "issue", "reserved",
                         "available", "on hand", "steel", "bolt", "kg", "pcs", "litre", "report", "alert", "overdue", "delivery",
-                        "how much", "how many", "attention", "today"]
+                        "how much", "how many", "attention", "today", "enough"]
     system_prompt = SYSTEM_PROMPT
     suggested_questions = ["How much inventory do we have?", "What came into inventory today?", "Which items are running low?",
                            "Show me pending goods receipts.", "Which purchase orders are overdue?", "Show inventory valuation.",
