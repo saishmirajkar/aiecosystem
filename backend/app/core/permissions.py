@@ -66,6 +66,18 @@ PERMISSIONS: list[PermissionDef] = [
     P("ai.access", "Access the AI Command Center", "ai"),
     P("approvals.view", "View action approvals", "ai"),
     P("approvals.decide", "Approve or reject action approvals", "ai"),
+    # Workforce & shift management
+    P("workforce.self", "Own schedule, leave, overtime claims and attendance", "workforce"),
+    P("workforce.view", "View employees and schedules in scope", "workforce"),
+    P("workforce.schedule", "Create and edit shifts and assignments", "workforce"),
+    P("workforce.leave.approve", "Approve or reject leave", "workforce"),
+    P("workforce.overtime.manage", "Publish, extend and cancel overtime opportunities; manual assignment", "workforce"),
+    P("workforce.attendance.manage", "Record attendance and decide corrections", "workforce"),
+    P("workforce.overtime.approve", "Approve overtime records", "workforce"),
+    P("workforce.employees.manage", "Manage employee records", "workforce"),
+    P("workforce.config", "Configure shifts, teams, skills, leave and overtime policies", "workforce"),
+    P("workforce.payroll", "View pay rates and create payroll exports", "workforce"),
+    P("workforce.all_departments", "Access workforce data across all departments", "workforce"),
 ]
 
 ALL_CODES: frozenset[str] = frozenset(p.code for p in PERMISSIONS)
@@ -132,6 +144,24 @@ DEFAULT_ROLES: dict[str, dict[str, object]] = {
                         "inventory.issue", "inventory.transfer", "inventory.adjust",
                         "purchasing.requisition.create", "approvals.view", "production.view",
                         "production.execute"],
+    },
+    "employee": {
+        "name": "Employee",
+        "description": "Self-service: own shifts, leave, overtime opportunities and attendance.",
+        "permissions": ["workforce.self", "ai.access"],
+    },
+    "shift_manager": {
+        "name": "Shift Manager",
+        "description": "Schedules shifts, approves leave, runs the overtime marketplace and attendance for their departments.",
+        "permissions": ["workforce.self", "workforce.view", "workforce.schedule", "workforce.leave.approve",
+                        "workforce.overtime.manage", "workforce.attendance.manage", "workforce.overtime.approve",
+                        "ai.access", "departments.view", "approvals.view"],
+    },
+    "hr_admin": {
+        "name": "HR Administrator",
+        "description": "Manages employees, workforce policies, overtime records and payroll exports across departments.",
+        "permissions": [p.code for p in PERMISSIONS if p.module == "workforce"] + [
+            "users.view", "departments.view", "departments.manage", "ai.access", "approvals.view", "audit.view"],
     },
     "read_only": {
         "name": "Read-Only User",

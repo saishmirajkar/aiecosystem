@@ -49,7 +49,15 @@ class Settings(BaseSettings):
     ai_history_turns: int = 10
     ai_max_tokens: int = 16000
 
-    mail_backend: Literal["console", "disabled"] = "console"
+    # Email: "console" writes messages to the log only; "smtp" sends through the server below.
+    mail_backend: Literal["console", "disabled", "smtp"] = "console"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_starttls: bool = True
+    mail_from: str = "Above <no-reply@localhost>"
+    # Push and WhatsApp providers are not integrated yet; their adapters report "not connected".
     frontend_url: str = "http://localhost:5173"
 
     @field_validator("cors_origins", mode="before")

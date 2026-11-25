@@ -19,7 +19,7 @@ def build(decision: RouteDecision, responses: list[AgentResponse], agent_names: 
                        f"Connected today: {connected_departments_text(list(agent_names.values()))}.")
     if decision.briefing:
         notices.append(f"This briefing covers {', '.join(agent_names[r.agent_id] for r in responses) or 'connected agents'} — "
-                       "quality, maintenance, finance, HR and sales are not connected yet.")
+                       "finance, quality, maintenance and sales are not connected yet.")
     for r in responses:
         notices.extend(r.notices)
 

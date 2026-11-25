@@ -33,6 +33,7 @@ def seed_reference_data(db: Session) -> None:
             db.add(Permission(code=p.code, name=p.name, module=p.module))
     db.flush()
     perm_by_code = {p.code: p for p in db.execute(select(Permission)).scalars()}
+    new_codes = {p.code for p in PERMISSIONS} - set(existing_perms) if existing_perms else set()
 
     for code, spec in DEFAULT_ROLES.items():
         role = db.execute(select(Role).where(Role.code == code)).scalar_one_or_none()
@@ -42,6 +43,12 @@ def seed_reference_data(db: Session) -> None:
             db.add(role)
         elif code == "super_admin":
             role.permissions = list(perm_by_code.values())
+        elif new_codes:
+            # A module was added to an existing installation: grant its new permissions to the system roles whose
+            # defaults include them. Permissions that already existed are left as administrators configured them.
+            held = {p.code for p in role.permissions}
+            role.permissions = role.permissions + [perm_by_code[c] for c in spec["permissions"]  # type: ignore[union-attr]
+                                                   if c in new_codes and c not in held]
 
     for code, name in DEFAULT_DEPARTMENTS:
         if db.execute(select(Department).where(Department.code == code)).scalar_one_or_none() is None:
@@ -64,3 +71,6 @@ def seed_reference_data(db: Session) -> None:
         if db.get(SystemSetting, key) is None:
             db.add(SystemSetting(key=key, value=value, description=description))
     db.flush()
+
+    from app.modules.workforce.seed import seed_workforce  # module reference data (policies, leave types)
+    seed_workforce(db)

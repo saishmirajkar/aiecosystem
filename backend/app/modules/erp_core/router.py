@@ -21,10 +21,12 @@ from app.models import (
 from app.modules.erp_core import schemas as s
 from app.modules.erp_core import service as svc
 from app.modules.erp_core.attachments import save_upload, storage_dir
+from app.modules.workforce.notify import WORKFORCE_NOTIFICATION_TYPES
 
 router = APIRouter()
 ALERT_TYPES = ["low_stock", "critical_stock", "overstock", "expiring_stock", "pending_receipt",
-               "unconfirmed_transfer", "stock_discrepancy", "inactive_stock", "approval_request"]
+               "unconfirmed_transfer", "stock_discrepancy", "inactive_stock", "approval_request",
+               *WORKFORCE_NOTIFICATION_TYPES]
 
 
 # ------------------------------------------------------------------ setup
@@ -313,7 +315,7 @@ def list_audit_logs(db: DB, _: Actor = Depends(require_permission("audit.view"))
 @router.get("/notifications/preferences", response_model=list[s.NotificationPrefOut], tags=["notifications"])
 def get_prefs(actor: CurrentActor, db: DB):
     rows = {p.alert_type: p for p in db.execute(select(NotificationPreference).where(NotificationPreference.user_id == actor.user_id)).scalars()}
-    return [rows.get(t) or {"alert_type": t, "in_app": True, "email": False} for t in ALERT_TYPES]
+    return [rows.get(t) or {"alert_type": t, "in_app": True, "email": False, "push": False, "whatsapp": False} for t in ALERT_TYPES]
 
 
 @router.put("/notifications/preferences", response_model=list[s.NotificationPrefOut], tags=["notifications"])
@@ -326,7 +328,7 @@ def put_prefs(data: list[s.NotificationPrefIn], actor: CurrentActor, db: DB):
         if row is None:
             db.add(NotificationPreference(user_id=actor.user_id, **item.model_dump()))
         else:
-            row.in_app, row.email = item.in_app, item.email
+            row.in_app, row.email, row.push, row.whatsapp = item.in_app, item.email, item.push, item.whatsapp
     audit(db, actor, "notifications.preferences_update", "user", actor.user_id, {"preferences": [i.model_dump() for i in data]})
     db.commit()
     return get_prefs(actor, db)

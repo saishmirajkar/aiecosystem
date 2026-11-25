@@ -58,6 +58,14 @@ def chat(data: ChatIn, db: DB, actor: Actor = Depends(AI)) -> dict:
     return {"conversation": {"id": str(conv.id), "title": conv.title}, "message": message_out(reply)}
 
 
+@router.post("/ai/workforce/chat", tags=["ai"])
+def workforce_chat(data: ChatIn, db: DB, actor: Actor = Depends(AI)) -> dict:
+    """Talk to the Workforce Agent directly (the general /ai/chat also routes workforce questions to it)."""
+    limiter.hit(f"ai:{actor.user_id}", get_settings().ai_rate_limit_per_minute)
+    conv, reply = get_main_agent().handle(db, actor, data.message, data.conversation_id, agent_id="workforce")
+    return {"conversation": {"id": str(conv.id), "title": conv.title}, "message": message_out(reply)}
+
+
 @router.get("/ai/conversations", tags=["ai"])
 def list_conversations(db: DB, actor: Actor = Depends(AI), q: str | None = None,
                        page: int = Query(1, ge=1), page_size: int = Query(30, ge=1, le=100)) -> dict:

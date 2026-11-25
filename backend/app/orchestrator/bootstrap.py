@@ -5,6 +5,7 @@ from functools import lru_cache
 
 from app.agents.inventory_agent import InventoryAgent
 from app.agents.production_agent import ProductionAgent
+from app.agents.workforce_agent import WorkforceAgent
 from app.core.database import SessionLocal
 from app.orchestrator.agent_registry import AgentRegistry
 from app.orchestrator.dispatcher import Dispatcher
@@ -17,6 +18,7 @@ def get_registry() -> AgentRegistry:
     registry = AgentRegistry()
     registry.register(InventoryAgent())
     registry.register(ProductionAgent())  # client/company-x
+    registry.register(WorkforceAgent())
     return registry
 
 

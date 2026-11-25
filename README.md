@@ -14,12 +14,13 @@ the real business services, and every action it proposes needs human approval.
 ## What's in this release
 | Area | Highlights |
 |---|---|
-| ERP core | First-run setup, company settings, users, server-side sessions (Argon2id), configurable RBAC (8 seeded roles, 37 permissions), departments, warehouse scoping, audit log, notifications, secure uploads |
+| ERP core | First-run setup, company settings, users, server-side sessions (Argon2id), sign-in by email or employee code, configurable RBAC (11 seeded roles, 48 permissions), departments, warehouse scoping, audit log, notifications with delivery log, secure uploads |
 | Master data | Products (6 types, batch/serial/expiry tracking), categories, units & conversions, suppliers, warehouses with Section → Rack → Bin locations |
 | Inventory | Append-only stock ledger (DB trigger), locked & idempotent postings, opening balances, stock-in, issues with FEFO auto-allocation, damaged/returned status, reservations, in-transit transfers with approval, approval-gated adjustments & cycle counts, weighted-average valuation, 8 live alert types, 13 reports with CSV |
 | Purchasing | Requisitions → approval → conversion, purchase orders with approval workflow, goods receipts with partial, damaged, rejected and authorised over-receipt — the only path from PO to stock |
-| AI | Inventory Agent with 15 tools; Claude engine (manual tool loop, adaptive thinking, refusal fallbacks) or deterministic offline engine; Main Agent with registry, router, dispatcher, consolidation; approvals bound to a parameter hash; per-user conversations |
-| UI | Dashboard, inventory, purchasing, AI Command Center (page + global drawer), settings — light & dark themes, responsive |
+| Workforce | Employees, teams, skills, shift templates and rotations, dated shifts with positions, leave with balances and approval; approved leave becomes an **overtime opportunity** published to eligible colleagues; **first eligible claim wins** (row locks + database constraints); withdrawals, conflicts, manual assignment with reason; attendance with corrections and CSV import; overtime calculated from attendance against configurable policy; payroll export (CSV/XLSX) |
+| AI | Inventory Agent with 15 tools; Workforce Agent with 15 tools; Claude engine (manual tool loop, adaptive thinking, refusal fallbacks) or deterministic offline engine; Main Agent with registry, router, dispatcher, consolidation; approvals bound to a parameter hash; per-user conversations |
+| UI | Dashboard, inventory, purchasing, workforce (mobile-first employee app, manager board, HR setup), AI Command Center (page + global drawer), settings — light & dark themes, responsive |
 
 > **Branch `client/company-x`** adds Company X's production and job-work flow: plants and job-work
 > vendors as stock locations, BOM + route per product, production orders with a live "where are
@@ -101,7 +102,7 @@ including multi-threaded concurrency tests. See [`docs/testing/TESTING.md`](docs
 
 ## Repository layout
 ```
-backend/    FastAPI app (app/core, models, modules/{erp_core,master_data,inventory,purchasing},
+backend/    FastAPI app (app/core, models, modules/{erp_core,master_data,inventory,purchasing,workforce},
             ai_tools, agents, orchestrator, workers), Alembic migrations, pytest suite
 frontend/   React + TypeScript + Vite + Tailwind; features/*, components/ui, e2e smoke test
 docs/       architecture, database (ER diagram), api (+ openapi.json), agents, security,
@@ -114,6 +115,7 @@ docker-compose.yml · .env.example
 * [Database schema & ER diagram](docs/database/DATABASE_SCHEMA.md)
 * [API specification](docs/api/API_SPECIFICATION.md) · live docs at `/api/docs`
 * [Agent architecture](docs/agents/AGENT_ARCHITECTURE.md)
+* [Workforce & shift management](docs/workforce/WORKFORCE_ARCHITECTURE.md)
 * [Security architecture](docs/security/SECURITY_ARCHITECTURE.md)
 * [Deployment](docs/deployment/DEPLOYMENT.md) · [Testing](docs/testing/TESTING.md)
 * [Roadmap](docs/DEVELOPMENT_ROADMAP.md) · [Implementation log](docs/IMPLEMENTATION_LOG.md)

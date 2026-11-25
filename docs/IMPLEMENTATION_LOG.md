@@ -124,3 +124,68 @@ Scope and decisions: `docs/clients/COMPANY_X.md`.
 - A plant shortage is flagged on the order but does not raise a transfer request automatically.
 - Demo activity is compressed into a few days, so the demo's vendor turnaround figures are short.
 
+## Workforce & Shift Management (foundation module, branch `feature/workforce`, 2026-11-24)
+Design, decisions and data model: `docs/workforce/WORKFORCE_ARCHITECTURE.md`.
+
+**Built**
+- Backend module `app/modules/workforce`:
+  - people, teams, skills
+  - shift templates, rotations, dated shifts with positions, generation and copy-week
+  - leave with balances and approval
+  - vacancy → overtime opportunity
+  - atomic first-come-first-served claim
+  - withdrawals and conflicts, manual assignment with reason
+  - attendance with corrections and CSV import
+  - overtime calculation from attendance, approval, payroll export (CSV/XLSX)
+  - notifications with dedupe and delivery log; email through SMTP when configured; push/WhatsApp report "not connected"
+  - dashboards and reports
+  - Celery jobs: expiry, absence marking, email delivery
+- Migration `0004`, with tables, the `btree_gist` no-overlap constraint and a one-active-assignment-per-position index.
+- Workforce Agent (15 tools, 2 approval-gated actions), registered with the Main Agent, plus `POST /ai/workforce/chat`.
+- Frontend:
+  - mobile-first employee app (bottom tabs, one-tap claim)
+  - manager screens: dashboard, calendar (day/week/month), leave, overtime board with live claims log, attendance, overtime records
+  - HR screens: employees, setup, payroll, reports
+- Demo: 17 employees in 4 teams, staggered rotations, a week of attendance, leave in every state, open/filled/expired opportunities, an open conflict, a payroll batch.
+
+**Foundation changes made here (go to `main` with the module)**
+- Sign-in accepts an employee code.
+- `/auth/me` returns `employee_id`.
+- Push/WhatsApp preference flags and a notification dedupe key.
+- SMTP settings.
+- Seeding grants a newly added module's permissions to existing system roles.
+- Idempotent replay of business-decided status codes.
+- `time` values in audit JSON.
+- Stricter rule for adding a secondary agent.
+- Frontend login keeps the session query bound (fixes a race after sign-in).
+
+**Test results (executed 2026-11-24)**
+| Check | Result |
+|---|---|
+| Backend `pytest` (PostgreSQL 16, Redis), whole suite | 124 passed |
+| Workforce: 10 scenarios from the brief + rules, privacy, permissions, idempotency | 25 passed |
+| Concurrency: 9 threads claiming a 1-position offer through the API; 9 threads with separate DB sessions claiming a 3-position offer | exactly 1 and exactly 3 winners |
+| Workforce Agent | 6 passed |
+| Migration 0004 upgrade / downgrade / re-upgrade, model drift check | passed |
+| Frontend typecheck, `vitest` (16 tests), production build | passed |
+| Playwright smoke on a live API + Vite with fresh demo data | 64 checks passed, including: employee applies for leave on a phone (employee-code login) → manager approves → opportunity published → eligible colleague notified without the absent colleague's name → claims on a phone → shift in winner's schedule → later claim refused → manager sees claims log → overtime approved → HR payroll export |
+| Docker image rebuild for this branch | not executed |
+
+**Known limitations**
+- Push and WhatsApp are interfaces only (report "not connected"); email sends only with SMTP configured.
+- No biometric/RFID device API yet (CSV import covers terminal exports).
+- No full payroll processing (export only), by design for this phase.
+- Real-time updates poll every 5–30 s; server-sent events are not implemented.
+- A leave spanning two calendar years counts against the start year's balance.
+- Not merged: waiting for acceptance before `feature/workforce` → `main` → `client/company-x` (migration heads 0003/0004 will need a merge revision on the client branch).
+
+---
+
+## Workforce merged into `client/company-x` (2026-11-25)
+`feature/workforce` was merged directly into this branch at the user's request; `main` does not have it yet.
+- Migration `0005` joins the two heads (`0003` production flow, `0004` workforce); it has no operations.
+- Three department agents now run under the Main Agent: Inventory, Production and Workforce. The stricter
+  secondary-agent rule from the workforce branch applies to all three.
+- The module switcher's **ERP** module holds Inventory, Purchasing, Production and Sales & Dispatch; **Workforce** holds My work
+  and Workforce. AI Command Center, Approvals and Settings are shared.
+- The demo loads both scenarios: the gearbox production flow and the shop-floor workforce.

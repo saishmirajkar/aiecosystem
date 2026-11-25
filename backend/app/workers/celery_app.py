@@ -14,5 +14,8 @@ celery_app.conf.update(
     beat_schedule={
         "inventory-alert-digest": {"task": "app.workers.tasks.generate_alert_notifications", "schedule": crontab(hour=1, minute=30)},
         "expire-stale-approvals": {"task": "app.workers.tasks.expire_approvals", "schedule": crontab(minute=5)},
+        "workforce-tick": {"task": "app.workers.tasks.workforce_tick", "schedule": 60.0},
+        "workforce-attendance-close": {"task": "app.workers.tasks.workforce_attendance_close", "schedule": crontab(minute="*/15")},
+        "deliver-notifications": {"task": "app.workers.tasks.deliver_notifications", "schedule": 60.0},
     },
 )

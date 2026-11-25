@@ -96,7 +96,8 @@ class SetupIn(InputSchema):
 
 
 class LoginIn(InputSchema):
-    email: EmailStr
+    # An email address, or an employee code for staff who sign in without email.
+    email: str = Field(min_length=1, max_length=254)
     password: str = Field(min_length=1, max_length=256)
 
 
@@ -130,6 +131,7 @@ class UserOut(Schema):
 class MeOut(UserOut):
     permissions: list[str]
     company: CompanyOut | None
+    employee_id: uuid.UUID | None = None  # set when the login is linked to a workforce employee record
 
 
 class LoginOut(Schema):
@@ -264,12 +266,16 @@ class NotificationPrefIn(InputSchema):
     alert_type: str = Field(max_length=50)
     in_app: bool = True
     email: bool = False
+    push: bool = False
+    whatsapp: bool = False
 
 
 class NotificationPrefOut(Schema):
     alert_type: str
     in_app: bool
     email: bool
+    push: bool = False
+    whatsapp: bool = False
 
 
 class NotificationOut(Schema):

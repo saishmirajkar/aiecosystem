@@ -250,6 +250,8 @@ def load_demo_data(db: Session, admin: User) -> None:
     # client/company-x: job-work production scenario on top of the foundation demo
     from app.modules.production.demo import load_production_demo
     load_production_demo(db, actor, products, units, cats, whs)
+    from app.modules.workforce.demo import load_workforce_demo  # workforce module: people, rotas, leave, overtime
+    load_workforce_demo(db, admin, DEMO_PASSWORD)
 
     db.add(SystemSetting(key="system.demo_data", value=True, description="Installation contains synthetic demo data"))
     db.flush()

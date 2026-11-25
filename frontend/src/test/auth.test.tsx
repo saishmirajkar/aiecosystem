@@ -13,7 +13,7 @@ describe("LoginPage", () => {
       "POST /auth/login": () => ({ user: ME, token: "t", expires_at: "2026-11-19T00:00:00Z" }),
     });
     renderApp(<Routes><Route path="/login" element={<LoginPage />} /><Route path="/" element={<p>Home</p>} /></Routes>, { route: "/login" });
-    await userEvent.type(screen.getByLabelText("Email"), "admin@demo.example.com");
+    await userEvent.type(screen.getByLabelText("Email or employee code"), "admin@demo.example.com");
     await userEvent.type(screen.getByLabelText("Password"), "Admin-Passw0rd!");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await waitFor(() => expect(screen.getByText("Home")).toBeInTheDocument());
@@ -28,7 +28,7 @@ describe("LoginPage", () => {
       "POST /auth/login": () => jsonResponse({ error: { code: "invalid_credentials", message: "Invalid email or password" } }, 401),
     });
     renderApp(<LoginPage />, { route: "/login" });
-    await userEvent.type(screen.getByLabelText("Email"), "x@demo.example.com");
+    await userEvent.type(screen.getByLabelText("Email or employee code"), "x@demo.example.com");
     await userEvent.type(screen.getByLabelText("Password"), "wrong");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Invalid email or password");

@@ -26,7 +26,7 @@ export interface User {
   primary_department_id: UUID | null; warehouse_ids: UUID[];
 }
 
-export interface Me extends User { permissions: string[]; company: Company | null }
+export interface Me extends User { permissions: string[]; company: Company | null; employee_id?: UUID | null }
 
 export interface Role {
   id: UUID; code: string; name: string; description: string | null; is_system: boolean; permissions: string[]; user_count: number;

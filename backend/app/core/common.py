@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Generic, TypeVar
@@ -66,7 +66,7 @@ def apply_sort(stmt: Select, sort: str | None, allowed: dict[str, Any], default:
 def _jsonable(value: Any) -> Any:
     if isinstance(value, (uuid.UUID, Decimal)):
         return str(value)
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, (datetime, date, time)):
         return value.isoformat()
     if isinstance(value, Enum):
         return value.value
@@ -116,6 +116,9 @@ SEQUENCES = {
     "job_work_challan": "JWC",
     "job_work_receipt": "JWR",
     "dispatch_note": "DN",
+    "leave_request": "LV",
+    "overtime_opportunity": "OT",
+    "payroll_export": "PAY",
 }
 
 
